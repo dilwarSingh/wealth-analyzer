@@ -1,0 +1,245 @@
+name: Release Build Matrix (Desktop & Web)
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release Tag (e.g. v1.0.0, defaults to current tag/run date)'
+        required: false
+        default: ''
+      release_title:
+        description: 'Release Title (e.g. Wealth Analyzer v1.0.0)'
+        required: false
+        default: ''
+      draft:
+        description: 'Create as Draft Release'
+        required: false
+        type: boolean
+        default: false
+      prerelease:
+        description: 'Mark as Pre-release'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  lint-and-test:
+    name: Quality Gate (Analyze & Test)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Analyze Project
+        run: flutter analyze
+
+      - name: Run Unit & Integration Tests
+        run: flutter test
+
+  build-windows:
+    name: Build Windows Desktop
+    needs: lint-and-test
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Enable Windows Desktop Support
+        run: flutter config --enable-windows-desktop
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Build Windows Release
+        run: flutter build windows --release
+
+      - name: Package Windows Artifact
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist
+          Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath dist\wealth-analyzer-windows-x64.zip
+
+      - name: Upload Windows Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wealth-analyzer-windows-x64
+          path: dist/wealth-analyzer-windows-x64.zip
+          if-no-files-found: error
+
+  build-linux:
+    name: Build Linux Desktop
+    needs: lint-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install Linux Build Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Enable Linux Desktop Support
+        run: flutter config --enable-linux-desktop
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Build Linux Release
+        run: flutter build linux --release
+
+      - name: Package Linux Artifact
+        run: |
+          mkdir -p dist
+          tar -czf dist/wealth-analyzer-linux-x64.tar.gz -C build/linux/x64/release/bundle .
+
+      - name: Upload Linux Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wealth-analyzer-linux-x64
+          path: dist/wealth-analyzer-linux-x64.tar.gz
+          if-no-files-found: error
+
+  build-macos:
+    name: Build macOS Desktop
+    needs: lint-and-test
+    runs-on: macos-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Enable macOS Desktop Support
+        run: flutter config --enable-macos-desktop
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Build macOS Release
+        run: flutter build macos --release
+
+      - name: Package macOS Artifact
+        run: |
+          mkdir -p dist
+          cd build/macos/Build/Products/Release
+          zip -r ../../../../dist/wealth-analyzer-macos.zip wealth_projector.app
+
+      - name: Upload macOS Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wealth-analyzer-macos
+          path: dist/wealth-analyzer-macos.zip
+          if-no-files-found: error
+
+  build-web:
+    name: Build Web Application
+    needs: lint-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Build Web Release
+        run: flutter build web --release --base-href "/"
+
+      - name: Package Web Artifact
+        run: |
+          mkdir -p dist
+          cd build/web
+          zip -r ../../dist/wealth-analyzer-web.zip .
+
+      - name: Upload Web Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wealth-analyzer-web
+          path: dist/wealth-analyzer-web.zip
+          if-no-files-found: error
+
+  publish-release:
+    name: Publish GitHub Release
+    needs: [build-windows, build-linux, build-macos, build-web]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download All Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+          merge-multiple: true
+
+      - name: Determine Tag and Release Name
+        id: release_info
+        run: |
+          if [ -n "${{ github.event.inputs.tag_name }}" ]; then
+            TAG_NAME="${{ github.event.inputs.tag_name }}"
+          elif [ -n "${{ github.ref_name }}" ] && [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            TAG_NAME="${{ github.ref_name }}"
+          else
+            TAG_NAME="release-$(date +'%Y%m%d-%H%M%S')"
+          fi
+
+          if [ -n "${{ github.event.inputs.release_title }}" ]; then
+            RELEASE_TITLE="${{ github.event.inputs.release_title }}"
+          else
+            RELEASE_TITLE="Release ${TAG_NAME}"
+          fi
+
+          echo "tag_name=${TAG_NAME}" >> $GITHUB_OUTPUT
+          echo "release_title=${RELEASE_TITLE}" >> $GITHUB_OUTPUT
+
+      - name: Create or Update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release_info.outputs.tag_name }}
+          name: ${{ steps.release_info.outputs.release_title }}
+          draft: ${{ github.event.inputs.draft || false }}
+          prerelease: ${{ github.event.inputs.prerelease || false }}
+          generate_release_notes: true
+          files: |
+            release-artifacts/wealth-analyzer-windows-x64.zip
+            release-artifacts/wealth-analyzer-linux-x64.tar.gz
+            release-artifacts/wealth-analyzer-macos.zip
+            release-artifacts/wealth-analyzer-web.zip
