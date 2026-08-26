@@ -710,9 +710,6 @@ class _FireCalculatorCardState extends ConsumerState<FireCalculatorCard> {
   Widget _buildMultiFireCardsGrid(FireCalculationResult result, double currentNetWorth, CurrencyType currency) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isWide = constraints.maxWidth >= 900;
-        final isMedium = constraints.maxWidth >= 600 && !isWide;
-
         final standardCard = _buildFireFlavorCard(
           flavor: FireFlavor.standard,
           targetAmount: result.standardFireNumber,

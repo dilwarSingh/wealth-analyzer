@@ -104,15 +104,17 @@ class CalculateGrowthProjectionUseCase {
       ));
     }
 
-    // Milestone solver function
+    // Milestone solver function with fast-path lookup for precomputed integer years
     double getBaseValueAtYear(double years) {
       if (years <= 0) return initialNetWorth;
-      double total = 0.0;
-      for (final asset in activeAssets) {
-        final stepUp = asset.stepUpRate > 0 ? asset.stepUpRate : globalStepUpPercent;
-        total += asset.futureValueAfterYears(years, overrideStepUpRate: stepUp);
-      }
-      return total;
+      final int floorYear = years.floor();
+      if (floorYear >= points.length) return points.last.baseValue;
+      if (years == floorYear.toDouble()) return points[floorYear].baseValue;
+      // Interpolate or compute only for fine fractional steps
+      final prevVal = points[floorYear].baseValue;
+      final nextVal = (floorYear + 1 < points.length) ? points[floorYear + 1].baseValue : prevVal;
+      final fraction = years - floorYear;
+      return prevVal + (nextVal - prevVal) * fraction;
     }
 
     final milestone1 = FinancialCalculator.findMilestoneAge(

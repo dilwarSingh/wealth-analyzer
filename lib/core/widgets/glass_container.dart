@@ -71,7 +71,7 @@ class GlassContainer extends StatelessWidget {
                 blurRadius: 16,
                 offset: const Offset(0, 4),
               ),
-              if (glowShadow != null) glowShadow!,
+              ?glowShadow,
             ],
           ),
           child: child,

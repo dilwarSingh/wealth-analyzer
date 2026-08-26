@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../viewmodels/portfolio_viewmodel.dart';
 import '../widgets/asset_list_table.dart';
 import '../widgets/donut_allocation_chart.dart';

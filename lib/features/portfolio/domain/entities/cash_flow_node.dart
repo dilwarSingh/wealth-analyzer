@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'asset_category.dart';
 
 class SankeyNode {
   final String id;

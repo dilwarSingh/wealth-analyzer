@@ -17,9 +17,10 @@ class CurrencyViewModel extends StateNotifier<CurrencyType> {
   }
 
   Future<void> _loadStoredCurrency() async {
-    if (_repository == null) return;
+    final repo = _repository;
+    if (repo == null) return;
     try {
-      final settings = await _repository!.getUserSettings();
+      final settings = await repo.getUserSettings();
       if (_isUserModified) return;
       final loaded = settings.currencyCode.toUpperCase() == 'USD'
           ? CurrencyType.usd
@@ -44,11 +45,12 @@ class CurrencyViewModel extends StateNotifier<CurrencyType> {
   }
 
   Future<void> _persistCurrency(CurrencyType currency) async {
-    if (_repository == null) return;
+    final repo = _repository;
+    if (repo == null) return;
     try {
-      final currentSettings = await _repository!.getUserSettings();
+      final currentSettings = await repo.getUserSettings();
       final code = currency == CurrencyType.usd ? 'USD' : 'INR';
-      await _repository!.saveUserSettings(currentSettings.copyWith(currencyCode: code));
+      await repo.saveUserSettings(currentSettings.copyWith(currencyCode: code));
     } catch (_) {}
   }
 }

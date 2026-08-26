@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/utils/currency_formatter.dart';
@@ -87,6 +88,8 @@ class SwpViewModel extends StateNotifier<SwpState> {
   final PortfolioRepository? _repository;
   final Ref _ref;
   bool _isUserModified = false;
+  Timer? _persistDebounceTimer;
+  Timer? _solvencyDebounceTimer;
 
   SwpViewModel(
     this._useCase,
@@ -95,26 +98,34 @@ class SwpViewModel extends StateNotifier<SwpState> {
     ProjectionState initialProjState,
     CurrencyType initialCurrency,
   ) : super(SwpState.initial()) {
-    _recalculate(initialProjState, initialCurrency);
+    _recalculate(initialProjState, initialCurrency, immediateRecommendation: true);
     _loadStoredSettings();
 
     // Listen to accumulation simulator changes (retirement age, current age, inflation rate & final net worth)
     _ref.listen<ProjectionState>(projectionProvider, (previous, next) {
       final currency = _ref.read(currencyProvider);
-      _recalculate(next, currency);
+      _recalculate(next, currency, immediateRecommendation: false);
     });
 
     // Listen to currency changes
     _ref.listen<CurrencyType>(currencyProvider, (previous, next) {
       final proj = _ref.read(projectionProvider);
-      _recalculate(proj, next);
+      _recalculate(proj, next, immediateRecommendation: false);
     });
   }
 
+  @override
+  void dispose() {
+    _persistDebounceTimer?.cancel();
+    _solvencyDebounceTimer?.cancel();
+    super.dispose();
+  }
+
   Future<void> _loadStoredSettings() async {
-    if (_repository == null) return;
+    final repo = _repository;
+    if (repo == null) return;
     try {
-      final settings = await _repository!.getUserSettings();
+      final settings = await repo.getUserSettings();
       if (!mounted || _isUserModified) return;
       state = state.copyWith(
         monthlyWithdrawal: settings.swpMonthlyWithdrawal,
@@ -126,14 +137,15 @@ class SwpViewModel extends StateNotifier<SwpState> {
         isWithdrawalInTodayTerms: settings.swpWithdrawalInTodayTerms,
         milestoneExpenses: settings.swpMilestoneExpenses,
       );
-      _recalculate(_ref.read(projectionProvider), _ref.read(currencyProvider));
+      _recalculate(_ref.read(projectionProvider), _ref.read(currencyProvider), immediateRecommendation: true);
     } catch (_) {}
   }
 
   Future<void> _persistSettings() async {
-    if (_repository == null) return;
+    final repo = _repository;
+    if (repo == null) return;
     try {
-      final current = await _repository!.getUserSettings();
+      final current = await repo.getUserSettings();
       final updated = current.copyWith(
         swpMonthlyWithdrawal: state.monthlyWithdrawal,
         swpPostRetirementCagr: state.postRetirementCagr,
@@ -144,112 +156,331 @@ class SwpViewModel extends StateNotifier<SwpState> {
         swpWithdrawalInTodayTerms: state.isWithdrawalInTodayTerms,
         swpMilestoneExpenses: state.milestoneExpenses,
       );
-      await _repository!.saveUserSettings(updated);
+      await repo.saveUserSettings(updated);
     } catch (_) {}
   }
 
-  void _recalculate(ProjectionState projState, CurrencyType currency) {
+  void _debounceSolvencyRecommendation() {
+    _solvencyDebounceTimer?.cancel();
+    _solvencyDebounceTimer = Timer(const Duration(milliseconds: 250), () {
+      if (!mounted) return;
+      _computeAndApplySolvencyRecommendation();
+    });
+  }
+
+  void _computeAndApplySolvencyRecommendation() {
+    final proj = _ref.read(projectionProvider);
+    final fullResult = _calculateSwpResult(
+      monthlyWithdrawal: state.monthlyWithdrawal,
+      postRetirementCagr: state.postRetirementCagr,
+      inflationStepUp: state.inflationStepUp,
+      targetLifeAge: state.targetLifeAge,
+      useCustomCorpus: state.useCustomCorpus,
+      customCorpusAmount: state.customCorpusAmount,
+      isWithdrawalInTodayTerms: state.isWithdrawalInTodayTerms,
+      milestoneExpenses: state.milestoneExpenses,
+      projState: proj,
+      computeRecommendation: true,
+    );
+    state = state.copyWith(swpResult: fullResult);
+  }
+
+  SwpResult _calculateSwpResult({
+    required double monthlyWithdrawal,
+    required double postRetirementCagr,
+    required double inflationStepUp,
+    required int targetLifeAge,
+    required bool useCustomCorpus,
+    required double customCorpusAmount,
+    required bool isWithdrawalInTodayTerms,
+    required List<SwpMilestoneExpense> milestoneExpenses,
+    required ProjectionState projState,
+    bool computeRecommendation = false,
+  }) {
     final startAge = projState.targetRetirementAge;
     final currentAge = projState.currentAge;
     final inflationRate = projState.annualInflationPercent;
-    final int endAge = state.targetLifeAge > startAge ? state.targetLifeAge : (startAge + 30);
+    final int endAge = targetLifeAge > startAge ? targetLifeAge : (startAge + 30);
 
-    // Initial corpus: either custom override or final accumulation net worth
-    final double initialCorpus = state.useCustomCorpus
-        ? state.customCorpusAmount
+    final double initialCorpus = useCustomCorpus
+        ? customCorpusAmount
         : projState.simulationResult.finalBaseNetWorth;
 
-    final result = _useCase.execute(
+    return _useCase.execute(
       initialCorpus: initialCorpus,
-      initialMonthlyWithdrawal: state.monthlyWithdrawal,
-      annualReturnPercent: state.postRetirementCagr,
-      annualWithdrawalStepUpPercent: state.inflationStepUp,
+      initialMonthlyWithdrawal: monthlyWithdrawal,
+      annualReturnPercent: postRetirementCagr,
+      annualWithdrawalStepUpPercent: inflationStepUp,
       startAge: startAge,
       targetEndAge: endAge,
       currentAge: currentAge,
-      isWithdrawalInTodayTerms: state.isWithdrawalInTodayTerms,
+      isWithdrawalInTodayTerms: isWithdrawalInTodayTerms,
       annualInflationPercent: inflationRate,
+      milestoneExpenses: milestoneExpenses,
+      computeRecommendation: computeRecommendation,
+    );
+  }
+
+  void _recalculate(ProjectionState projState, CurrencyType currency, {bool immediateRecommendation = false}) {
+    final result = _calculateSwpResult(
+      monthlyWithdrawal: state.monthlyWithdrawal,
+      postRetirementCagr: state.postRetirementCagr,
+      inflationStepUp: state.inflationStepUp,
+      targetLifeAge: state.targetLifeAge,
+      useCustomCorpus: state.useCustomCorpus,
+      customCorpusAmount: state.customCorpusAmount,
+      isWithdrawalInTodayTerms: state.isWithdrawalInTodayTerms,
       milestoneExpenses: state.milestoneExpenses,
+      projState: projState,
+      computeRecommendation: immediateRecommendation,
     );
 
-    state = state.copyWith(swpResult: result);
+    state = state.copyWith(
+      swpResult: immediateRecommendation
+          ? result
+          : result.copyWith(recommendation: state.swpResult.recommendation),
+    );
+
+    if (!immediateRecommendation) {
+      _debounceSolvencyRecommendation();
+    }
   }
 
   void setMonthlyWithdrawal(double amount) {
     if (amount <= 0) return;
     _isUserModified = true;
-    state = state.copyWith(monthlyWithdrawal: amount);
-    _recalculate(_ref.read(projectionProvider), _ref.read(currencyProvider));
+    final proj = _ref.read(projectionProvider);
+    final result = _calculateSwpResult(
+      monthlyWithdrawal: amount,
+      postRetirementCagr: state.postRetirementCagr,
+      inflationStepUp: state.inflationStepUp,
+      targetLifeAge: state.targetLifeAge,
+      useCustomCorpus: state.useCustomCorpus,
+      customCorpusAmount: state.customCorpusAmount,
+      isWithdrawalInTodayTerms: state.isWithdrawalInTodayTerms,
+      milestoneExpenses: state.milestoneExpenses,
+      projState: proj,
+      computeRecommendation: false,
+    );
+    state = state.copyWith(
+      monthlyWithdrawal: amount,
+      swpResult: result.copyWith(recommendation: state.swpResult.recommendation),
+    );
     _persistSettings();
+    _debounceSolvencyRecommendation();
   }
 
   void setWithdrawalInTodayTerms(bool inToday) {
     _isUserModified = true;
-    state = state.copyWith(isWithdrawalInTodayTerms: inToday);
-    _recalculate(_ref.read(projectionProvider), _ref.read(currencyProvider));
+    final proj = _ref.read(projectionProvider);
+    final result = _calculateSwpResult(
+      monthlyWithdrawal: state.monthlyWithdrawal,
+      postRetirementCagr: state.postRetirementCagr,
+      inflationStepUp: state.inflationStepUp,
+      targetLifeAge: state.targetLifeAge,
+      useCustomCorpus: state.useCustomCorpus,
+      customCorpusAmount: state.customCorpusAmount,
+      isWithdrawalInTodayTerms: inToday,
+      milestoneExpenses: state.milestoneExpenses,
+      projState: proj,
+      computeRecommendation: false,
+    );
+    state = state.copyWith(
+      isWithdrawalInTodayTerms: inToday,
+      swpResult: result.copyWith(recommendation: state.swpResult.recommendation),
+    );
     _persistSettings();
+    _debounceSolvencyRecommendation();
   }
 
   void setPostRetirementCagr(double cagr) {
     _isUserModified = true;
-    state = state.copyWith(postRetirementCagr: cagr);
-    _recalculate(_ref.read(projectionProvider), _ref.read(currencyProvider));
+    final proj = _ref.read(projectionProvider);
+    final result = _calculateSwpResult(
+      monthlyWithdrawal: state.monthlyWithdrawal,
+      postRetirementCagr: cagr,
+      inflationStepUp: state.inflationStepUp,
+      targetLifeAge: state.targetLifeAge,
+      useCustomCorpus: state.useCustomCorpus,
+      customCorpusAmount: state.customCorpusAmount,
+      isWithdrawalInTodayTerms: state.isWithdrawalInTodayTerms,
+      milestoneExpenses: state.milestoneExpenses,
+      projState: proj,
+      computeRecommendation: false,
+    );
+    state = state.copyWith(
+      postRetirementCagr: cagr,
+      swpResult: result.copyWith(recommendation: state.swpResult.recommendation),
+    );
     _persistSettings();
+    _debounceSolvencyRecommendation();
   }
 
   void setInflationStepUp(double stepUp) {
     _isUserModified = true;
-    state = state.copyWith(inflationStepUp: stepUp);
-    _recalculate(_ref.read(projectionProvider), _ref.read(currencyProvider));
+    final proj = _ref.read(projectionProvider);
+    final result = _calculateSwpResult(
+      monthlyWithdrawal: state.monthlyWithdrawal,
+      postRetirementCagr: state.postRetirementCagr,
+      inflationStepUp: stepUp,
+      targetLifeAge: state.targetLifeAge,
+      useCustomCorpus: state.useCustomCorpus,
+      customCorpusAmount: state.customCorpusAmount,
+      isWithdrawalInTodayTerms: state.isWithdrawalInTodayTerms,
+      milestoneExpenses: state.milestoneExpenses,
+      projState: proj,
+      computeRecommendation: false,
+    );
+    state = state.copyWith(
+      inflationStepUp: stepUp,
+      swpResult: result.copyWith(recommendation: state.swpResult.recommendation),
+    );
     _persistSettings();
+    _debounceSolvencyRecommendation();
   }
 
   void setTargetLifeAge(int age) {
     final startAge = _ref.read(projectionProvider).targetRetirementAge;
     if (age <= startAge) return;
     _isUserModified = true;
-    state = state.copyWith(targetLifeAge: age);
-    _recalculate(_ref.read(projectionProvider), _ref.read(currencyProvider));
+    final proj = _ref.read(projectionProvider);
+    final result = _calculateSwpResult(
+      monthlyWithdrawal: state.monthlyWithdrawal,
+      postRetirementCagr: state.postRetirementCagr,
+      inflationStepUp: state.inflationStepUp,
+      targetLifeAge: age,
+      useCustomCorpus: state.useCustomCorpus,
+      customCorpusAmount: state.customCorpusAmount,
+      isWithdrawalInTodayTerms: state.isWithdrawalInTodayTerms,
+      milestoneExpenses: state.milestoneExpenses,
+      projState: proj,
+      computeRecommendation: false,
+    );
+    state = state.copyWith(
+      targetLifeAge: age,
+      swpResult: result.copyWith(recommendation: state.swpResult.recommendation),
+    );
     _persistSettings();
+    _debounceSolvencyRecommendation();
   }
 
   void setUseCustomCorpus(bool useCustom) {
     _isUserModified = true;
-    state = state.copyWith(useCustomCorpus: useCustom);
-    _recalculate(_ref.read(projectionProvider), _ref.read(currencyProvider));
+    final proj = _ref.read(projectionProvider);
+    final result = _calculateSwpResult(
+      monthlyWithdrawal: state.monthlyWithdrawal,
+      postRetirementCagr: state.postRetirementCagr,
+      inflationStepUp: state.inflationStepUp,
+      targetLifeAge: state.targetLifeAge,
+      useCustomCorpus: useCustom,
+      customCorpusAmount: state.customCorpusAmount,
+      isWithdrawalInTodayTerms: state.isWithdrawalInTodayTerms,
+      milestoneExpenses: state.milestoneExpenses,
+      projState: proj,
+      computeRecommendation: false,
+    );
+    state = state.copyWith(
+      useCustomCorpus: useCustom,
+      swpResult: result.copyWith(recommendation: state.swpResult.recommendation),
+    );
     _persistSettings();
+    _debounceSolvencyRecommendation();
   }
 
   void setCustomCorpusAmount(double amount) {
     if (amount <= 0) return;
     _isUserModified = true;
-    state = state.copyWith(customCorpusAmount: amount);
-    _recalculate(_ref.read(projectionProvider), _ref.read(currencyProvider));
+    final proj = _ref.read(projectionProvider);
+    final result = _calculateSwpResult(
+      monthlyWithdrawal: state.monthlyWithdrawal,
+      postRetirementCagr: state.postRetirementCagr,
+      inflationStepUp: state.inflationStepUp,
+      targetLifeAge: state.targetLifeAge,
+      useCustomCorpus: state.useCustomCorpus,
+      customCorpusAmount: amount,
+      isWithdrawalInTodayTerms: state.isWithdrawalInTodayTerms,
+      milestoneExpenses: state.milestoneExpenses,
+      projState: proj,
+      computeRecommendation: false,
+    );
+    state = state.copyWith(
+      customCorpusAmount: amount,
+      swpResult: result.copyWith(recommendation: state.swpResult.recommendation),
+    );
     _persistSettings();
+    _debounceSolvencyRecommendation();
   }
 
   void addMilestoneExpense(SwpMilestoneExpense expense) {
     _isUserModified = true;
     final updatedList = [...state.milestoneExpenses, expense];
-    state = state.copyWith(milestoneExpenses: updatedList);
-    _recalculate(_ref.read(projectionProvider), _ref.read(currencyProvider));
+    final proj = _ref.read(projectionProvider);
+    final result = _calculateSwpResult(
+      monthlyWithdrawal: state.monthlyWithdrawal,
+      postRetirementCagr: state.postRetirementCagr,
+      inflationStepUp: state.inflationStepUp,
+      targetLifeAge: state.targetLifeAge,
+      useCustomCorpus: state.useCustomCorpus,
+      customCorpusAmount: state.customCorpusAmount,
+      isWithdrawalInTodayTerms: state.isWithdrawalInTodayTerms,
+      milestoneExpenses: updatedList,
+      projState: proj,
+      computeRecommendation: false,
+    );
+    state = state.copyWith(
+      milestoneExpenses: updatedList,
+      swpResult: result.copyWith(recommendation: state.swpResult.recommendation),
+    );
     _persistSettings();
+    _debounceSolvencyRecommendation();
   }
 
   void updateMilestoneExpense(SwpMilestoneExpense updated) {
     _isUserModified = true;
     final updatedList = state.milestoneExpenses.map((m) => m.id == updated.id ? updated : m).toList();
-    state = state.copyWith(milestoneExpenses: updatedList);
-    _recalculate(_ref.read(projectionProvider), _ref.read(currencyProvider));
+    final proj = _ref.read(projectionProvider);
+    final result = _calculateSwpResult(
+      monthlyWithdrawal: state.monthlyWithdrawal,
+      postRetirementCagr: state.postRetirementCagr,
+      inflationStepUp: state.inflationStepUp,
+      targetLifeAge: state.targetLifeAge,
+      useCustomCorpus: state.useCustomCorpus,
+      customCorpusAmount: state.customCorpusAmount,
+      isWithdrawalInTodayTerms: state.isWithdrawalInTodayTerms,
+      milestoneExpenses: updatedList,
+      projState: proj,
+      computeRecommendation: false,
+    );
+    state = state.copyWith(
+      milestoneExpenses: updatedList,
+      swpResult: result.copyWith(recommendation: state.swpResult.recommendation),
+    );
     _persistSettings();
+    _debounceSolvencyRecommendation();
   }
 
   void removeMilestoneExpense(String id) {
     _isUserModified = true;
     final updatedList = state.milestoneExpenses.where((m) => m.id != id).toList();
-    state = state.copyWith(milestoneExpenses: updatedList);
-    _recalculate(_ref.read(projectionProvider), _ref.read(currencyProvider));
+    final proj = _ref.read(projectionProvider);
+    final result = _calculateSwpResult(
+      monthlyWithdrawal: state.monthlyWithdrawal,
+      postRetirementCagr: state.postRetirementCagr,
+      inflationStepUp: state.inflationStepUp,
+      targetLifeAge: state.targetLifeAge,
+      useCustomCorpus: state.useCustomCorpus,
+      customCorpusAmount: state.customCorpusAmount,
+      isWithdrawalInTodayTerms: state.isWithdrawalInTodayTerms,
+      milestoneExpenses: updatedList,
+      projState: proj,
+      computeRecommendation: false,
+    );
+    state = state.copyWith(
+      milestoneExpenses: updatedList,
+      swpResult: result.copyWith(recommendation: state.swpResult.recommendation),
+    );
     _persistSettings();
+    _debounceSolvencyRecommendation();
   }
 
   void toggleMilestoneExpense(String id) {
@@ -260,9 +491,25 @@ class SwpViewModel extends StateNotifier<SwpState> {
       }
       return m;
     }).toList();
-    state = state.copyWith(milestoneExpenses: updatedList);
-    _recalculate(_ref.read(projectionProvider), _ref.read(currencyProvider));
+    final proj = _ref.read(projectionProvider);
+    final result = _calculateSwpResult(
+      monthlyWithdrawal: state.monthlyWithdrawal,
+      postRetirementCagr: state.postRetirementCagr,
+      inflationStepUp: state.inflationStepUp,
+      targetLifeAge: state.targetLifeAge,
+      useCustomCorpus: state.useCustomCorpus,
+      customCorpusAmount: state.customCorpusAmount,
+      isWithdrawalInTodayTerms: state.isWithdrawalInTodayTerms,
+      milestoneExpenses: updatedList,
+      projState: proj,
+      computeRecommendation: false,
+    );
+    state = state.copyWith(
+      milestoneExpenses: updatedList,
+      swpResult: result.copyWith(recommendation: state.swpResult.recommendation),
+    );
     _persistSettings();
+    _debounceSolvencyRecommendation();
   }
 
   /// Apply a Safe Withdrawal Rule (e.g. 2%, 3%, 4%, 5%): Initial monthly withdrawal = (Corpus * (percentage / 100)) / 12

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/asset_category.dart';
 import '../../domain/entities/risk_analysis_models.dart';
@@ -76,6 +77,7 @@ class RiskAnalysisViewModel extends StateNotifier<RiskAnalysisState> {
   final RunMonteCarloUseCase _mcUseCase;
   final RunCrisisStressTestUseCase _stressUseCase;
   final Ref _ref;
+  Timer? _debounceRecalculateTimer;
 
   RiskAnalysisViewModel(
     this._mcUseCase,
@@ -89,31 +91,40 @@ class RiskAnalysisViewModel extends StateNotifier<RiskAnalysisState> {
     final blendedVol = _calculateBlendedVolatility(initialPortfolioState);
     state = state.copyWith(volatilityPercent: blendedVol);
 
-    // Initial calculation
+    // Initial calculation runs immediately
     _recalculate(initialSwpState, initialProjState);
 
-    // Listen to SWP changes (monthly withdrawal, CAGR, step-up, target life age, custom corpus)
+    // Listen to SWP changes with 250ms debounce so rapid slider drags don't run 1,000 Monte Carlo runs per frame
     _ref.listen<SwpState>(swpProvider, (previous, next) {
-      final proj = _ref.read(projectionProvider);
-      _recalculate(next, proj);
-    });
-
-    // Listen to accumulation retirement age changes
-    _ref.listen<ProjectionState>(projectionProvider, (previous, next) {
-      final swp = _ref.read(swpProvider);
-      _recalculate(swp, next);
+      _debounceRecalculateTimer?.cancel();
+      _debounceRecalculateTimer = Timer(const Duration(milliseconds: 250), () {
+        if (!mounted) return;
+        final proj = _ref.read(projectionProvider);
+        final swp = _ref.read(swpProvider);
+        _recalculate(swp, proj);
+      });
     });
 
     // Listen to portfolio asset changes to update blended volatility if not customized
     _ref.listen<PortfolioState>(portfolioProvider, (previous, next) {
       if (!state.isCustomVolatility) {
-        final newVol = _calculateBlendedVolatility(next);
-        state = state.copyWith(volatilityPercent: newVol);
-        final swp = _ref.read(swpProvider);
-        final proj = _ref.read(projectionProvider);
-        _recalculate(swp, proj);
+        _debounceRecalculateTimer?.cancel();
+        _debounceRecalculateTimer = Timer(const Duration(milliseconds: 250), () {
+          if (!mounted) return;
+          final newVol = _calculateBlendedVolatility(_ref.read(portfolioProvider));
+          state = state.copyWith(volatilityPercent: newVol);
+          final swp = _ref.read(swpProvider);
+          final proj = _ref.read(projectionProvider);
+          _recalculate(swp, proj);
+        });
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _debounceRecalculateTimer?.cancel();
+    super.dispose();
   }
 
   double _calculateBlendedVolatility(PortfolioState portfolioState) {

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../domain/entities/projection_scenario.dart';
@@ -85,6 +86,7 @@ class ProjectionViewModel extends StateNotifier<ProjectionState> {
   final PortfolioRepository? _repository;
   final Ref _ref;
   bool _isUserModified = false;
+  Timer? _persistDebounceTimer;
 
   ProjectionViewModel(
     this._useCase,
@@ -112,10 +114,17 @@ class ProjectionViewModel extends StateNotifier<ProjectionState> {
     });
   }
 
+  @override
+  void dispose() {
+    _persistDebounceTimer?.cancel();
+    super.dispose();
+  }
+
   Future<void> _loadStoredSettings() async {
-    if (_repository == null) return;
+    final repo = _repository;
+    if (repo == null) return;
     try {
-      final settings = await _repository!.getUserSettings();
+      final settings = await repo.getUserSettings();
       if (!mounted || _isUserModified) return;
       state = state.copyWith(
         currentAge: settings.currentAge,
@@ -128,30 +137,47 @@ class ProjectionViewModel extends StateNotifier<ProjectionState> {
   }
 
   Future<void> _persistSettings() async {
-    if (_repository == null) return;
+    final repo = _repository;
+    if (repo == null) return;
     try {
-      final current = await _repository!.getUserSettings();
+      final current = await repo.getUserSettings();
       final updated = current.copyWith(
         currentAge: state.currentAge,
         targetRetirementAge: state.targetRetirementAge,
         inflationRate: state.annualInflationPercent,
         globalStepUpRate: state.globalStepUpPercent,
       );
-      await _repository!.saveUserSettings(updated);
+      await repo.saveUserSettings(updated);
     } catch (_) {}
   }
 
-  void _recalculate(PortfolioState portfolioState, CurrencyType currency) {
-    // Milestone threshold: 1 Crore (10,000,000) for INR or $1 Million (1,000,000) for USD
+  SimulationResult _calculateSimulationResult({
+    required int currentAge,
+    required int targetRetirementAge,
+    required double annualInflationPercent,
+    required double globalStepUpPercent,
+    required PortfolioState portfolioState,
+    required CurrencyType currency,
+  }) {
     final milestone1 = currency == CurrencyType.inr ? 10000000.0 : 1000000.0;
-
-    final simResult = _useCase.execute(
+    return _useCase.execute(
       assets: portfolioState.assets,
+      currentAge: currentAge,
+      targetRetirementAge: targetRetirementAge,
+      annualInflationPercent: annualInflationPercent,
+      globalStepUpPercent: globalStepUpPercent,
+      milestoneThreshold1: milestone1,
+    );
+  }
+
+  void _recalculate(PortfolioState portfolioState, CurrencyType currency) {
+    final simResult = _calculateSimulationResult(
       currentAge: state.currentAge,
       targetRetirementAge: state.targetRetirementAge,
       annualInflationPercent: state.annualInflationPercent,
       globalStepUpPercent: state.globalStepUpPercent,
-      milestoneThreshold1: milestone1,
+      portfolioState: portfolioState,
+      currency: currency,
     );
 
     state = state.copyWith(simulationResult: simResult);
@@ -160,30 +186,66 @@ class ProjectionViewModel extends StateNotifier<ProjectionState> {
   void setCurrentAge(int age) {
     if (age >= state.targetRetirementAge) return;
     _isUserModified = true;
-    state = state.copyWith(currentAge: age);
-    _recalculate(_ref.read(portfolioProvider), _ref.read(currencyProvider));
+    final portfolio = _ref.read(portfolioProvider);
+    final currency = _ref.read(currencyProvider);
+    final simResult = _calculateSimulationResult(
+      currentAge: age,
+      targetRetirementAge: state.targetRetirementAge,
+      annualInflationPercent: state.annualInflationPercent,
+      globalStepUpPercent: state.globalStepUpPercent,
+      portfolioState: portfolio,
+      currency: currency,
+    );
+    state = state.copyWith(currentAge: age, simulationResult: simResult);
     _persistSettings();
   }
 
   void setTargetRetirementAge(int age) {
     if (age <= state.currentAge) return;
     _isUserModified = true;
-    state = state.copyWith(targetRetirementAge: age);
-    _recalculate(_ref.read(portfolioProvider), _ref.read(currencyProvider));
+    final portfolio = _ref.read(portfolioProvider);
+    final currency = _ref.read(currencyProvider);
+    final simResult = _calculateSimulationResult(
+      currentAge: state.currentAge,
+      targetRetirementAge: age,
+      annualInflationPercent: state.annualInflationPercent,
+      globalStepUpPercent: state.globalStepUpPercent,
+      portfolioState: portfolio,
+      currency: currency,
+    );
+    state = state.copyWith(targetRetirementAge: age, simulationResult: simResult);
     _persistSettings();
   }
 
   void setAnnualInflation(double inflation) {
     _isUserModified = true;
-    state = state.copyWith(annualInflationPercent: inflation);
-    _recalculate(_ref.read(portfolioProvider), _ref.read(currencyProvider));
+    final portfolio = _ref.read(portfolioProvider);
+    final currency = _ref.read(currencyProvider);
+    final simResult = _calculateSimulationResult(
+      currentAge: state.currentAge,
+      targetRetirementAge: state.targetRetirementAge,
+      annualInflationPercent: inflation,
+      globalStepUpPercent: state.globalStepUpPercent,
+      portfolioState: portfolio,
+      currency: currency,
+    );
+    state = state.copyWith(annualInflationPercent: inflation, simulationResult: simResult);
     _persistSettings();
   }
 
   void setGlobalStepUp(double stepUp) {
     _isUserModified = true;
-    state = state.copyWith(globalStepUpPercent: stepUp);
-    _recalculate(_ref.read(portfolioProvider), _ref.read(currencyProvider));
+    final portfolio = _ref.read(portfolioProvider);
+    final currency = _ref.read(currencyProvider);
+    final simResult = _calculateSimulationResult(
+      currentAge: state.currentAge,
+      targetRetirementAge: state.targetRetirementAge,
+      annualInflationPercent: state.annualInflationPercent,
+      globalStepUpPercent: stepUp,
+      portfolioState: portfolio,
+      currency: currency,
+    );
+    state = state.copyWith(globalStepUpPercent: stepUp, simulationResult: simResult);
     _persistSettings();
   }
 

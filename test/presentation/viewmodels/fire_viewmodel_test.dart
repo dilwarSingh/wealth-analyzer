@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:wealth_projector/features/portfolio/data/models/user_settings_model.dart';
 import 'package:wealth_projector/features/portfolio/domain/entities/asset_category.dart';
 import 'package:wealth_projector/features/portfolio/domain/entities/investment_asset.dart';
 import 'package:wealth_projector/features/portfolio/presentation/viewmodels/fire_viewmodel.dart';

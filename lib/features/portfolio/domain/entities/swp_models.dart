@@ -123,6 +123,33 @@ class SwpResult {
     this.recommendation,
   });
 
+  SwpResult copyWith({
+    List<SwpYearlyPoint>? yearlyPoints,
+    double? initialCorpus,
+    double? totalWithdrawn,
+    double? totalReturnsEarned,
+    double? totalOneTimeExpenses,
+    double? finalCorpus,
+    double? depletionAge,
+    bool? isSustainable,
+    double? effectiveMonthlyWithdrawalAtRetirement,
+    SwpSolvencyRecommendation? recommendation,
+  }) {
+    return SwpResult(
+      yearlyPoints: yearlyPoints ?? this.yearlyPoints,
+      initialCorpus: initialCorpus ?? this.initialCorpus,
+      totalWithdrawn: totalWithdrawn ?? this.totalWithdrawn,
+      totalReturnsEarned: totalReturnsEarned ?? this.totalReturnsEarned,
+      totalOneTimeExpenses: totalOneTimeExpenses ?? this.totalOneTimeExpenses,
+      finalCorpus: finalCorpus ?? this.finalCorpus,
+      depletionAge: depletionAge ?? this.depletionAge,
+      isSustainable: isSustainable ?? this.isSustainable,
+      effectiveMonthlyWithdrawalAtRetirement:
+          effectiveMonthlyWithdrawalAtRetirement ?? this.effectiveMonthlyWithdrawalAtRetirement,
+      recommendation: recommendation ?? this.recommendation,
+    );
+  }
+
   factory SwpResult.empty() {
     return const SwpResult(
       yearlyPoints: [],

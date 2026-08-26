@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../domain/entities/fire_models.dart';
@@ -32,9 +33,9 @@ class FireState {
     required this.customStartingCorpus,
     required this.useCustomMonthlySavings,
     required this.customMonthlySavings,
-    required this.leanMultiplier,
-    required this.fatMultiplier,
-    required this.baristaPartTimePercent,
+    this.leanMultiplier = 0.75,
+    this.fatMultiplier = 1.35,
+    this.baristaPartTimePercent = 0.40,
     required this.result,
   });
 
@@ -46,12 +47,12 @@ class FireState {
       expectedReturn: 12.0,
       stepUpSavings: 10.0,
       useCustomStartingCorpus: false,
-      customStartingCorpus: 1000000.0,
+      customStartingCorpus: 5000000.0,
       useCustomMonthlySavings: false,
       customMonthlySavings: 25000.0,
       leanMultiplier: 0.75,
       fatMultiplier: 1.35,
-      baristaPartTimePercent: 40.0,
+      baristaPartTimePercent: 0.40,
       result: FireCalculationResult.empty(),
     );
   }
@@ -89,7 +90,8 @@ class FireState {
   }
 }
 
-final calculateFireProjectionUseCaseProvider = Provider<CalculateFireProjectionUseCase>((ref) {
+final calculateFireProjectionUseCaseProvider =
+    Provider<CalculateFireProjectionUseCase>((ref) {
   return CalculateFireProjectionUseCase();
 });
 
@@ -113,26 +115,24 @@ class FireViewModel extends StateNotifier<FireState> {
     _loadStoredSettings();
     _recalculate();
 
-    // Listen to portfolio updates (current net worth, monthly SIP, blended CAGR)
     _ref.listen<PortfolioState>(portfolioProvider, (previous, next) {
       _recalculate();
     });
 
-    // Listen to projection timeline updates (current age, retirement age)
     _ref.listen<ProjectionState>(projectionProvider, (previous, next) {
       _recalculate();
     });
 
-    // Listen to currency changes
     _ref.listen<CurrencyType>(currencyProvider, (previous, next) {
       _recalculate();
     });
   }
 
   Future<void> _loadStoredSettings() async {
-    if (_repository == null) return;
+    final repo = _repository;
+    if (repo == null) return;
     try {
-      final settings = await _repository.getUserSettings();
+      final settings = await repo.getUserSettings();
       if (!_isUserModified) {
         state = state.copyWith(
           monthlyExpenses: settings.fireMonthlyExpenses,
@@ -151,8 +151,9 @@ class FireViewModel extends StateNotifier<FireState> {
   }
 
   void _persistSettings() {
-    if (_repository == null) return;
-    _repository.getUserSettings().then((current) {
+    final repo = _repository;
+    if (repo == null) return;
+    repo.getUserSettings().then((current) {
       final updated = current.copyWith(
         fireMonthlyExpenses: state.monthlyExpenses,
         fireSwrPercent: state.swrPercent,
@@ -164,118 +165,134 @@ class FireViewModel extends StateNotifier<FireState> {
         fireUseCustomSavings: state.useCustomMonthlySavings,
         fireCustomMonthlySavings: state.customMonthlySavings,
       );
-      _repository.saveUserSettings(updated);
+      repo.saveUserSettings(updated);
     }).catchError((_) {});
+  }
+
+  FireCalculationResult _computeResult({
+    double? monthlyExpenses,
+    double? swrPercent,
+    double? inflationRate,
+    double? expectedReturn,
+    double? stepUpSavings,
+    bool? useCustomStartingCorpus,
+    double? customStartingCorpus,
+    bool? useCustomMonthlySavings,
+    double? customMonthlySavings,
+    double? leanMultiplier,
+    double? fatMultiplier,
+    double? baristaPartTimePercent,
+  }) {
+    final portfolioState = _ref.read(portfolioProvider);
+    final projState = _ref.read(projectionProvider);
+
+    final useCustStart = useCustomStartingCorpus ?? state.useCustomStartingCorpus;
+    final custStartVal = customStartingCorpus ?? state.customStartingCorpus;
+    final startingCorpus = useCustStart ? custStartVal : portfolioState.summary.totalNetWorth;
+
+    final useCustSav = useCustomMonthlySavings ?? state.useCustomMonthlySavings;
+    final custSavVal = customMonthlySavings ?? state.customMonthlySavings;
+    final monthlySavings = useCustSav ? custSavVal : portfolioState.summary.totalMonthlySipInflow;
+
+    return _useCase.execute(
+      currentNetWorth: startingCorpus,
+      currentMonthlySavings: monthlySavings,
+      monthlyExpenses: monthlyExpenses ?? state.monthlyExpenses,
+      swrPercent: swrPercent ?? state.swrPercent,
+      inflationPercent: inflationRate ?? state.inflationRate,
+      annualReturnPercent: expectedReturn ?? state.expectedReturn,
+      stepUpSavingsPercent: stepUpSavings ?? state.stepUpSavings,
+      currentAge: projState.currentAge,
+      targetRetirementAge: projState.targetRetirementAge,
+      leanMultiplier: leanMultiplier ?? state.leanMultiplier,
+      fatMultiplier: fatMultiplier ?? state.fatMultiplier,
+      baristaPartTimePercent: baristaPartTimePercent ?? state.baristaPartTimePercent,
+    );
   }
 
   void setMonthlyExpenses(double val) {
     _isUserModified = true;
-    state = state.copyWith(monthlyExpenses: val);
-    _recalculate();
+    final res = _computeResult(monthlyExpenses: val);
+    state = state.copyWith(monthlyExpenses: val, result: res);
     _persistSettings();
   }
 
   void setSwrPercent(double val) {
     _isUserModified = true;
-    state = state.copyWith(swrPercent: val);
-    _recalculate();
+    final res = _computeResult(swrPercent: val);
+    state = state.copyWith(swrPercent: val, result: res);
     _persistSettings();
   }
 
   void setInflationRate(double val) {
     _isUserModified = true;
-    state = state.copyWith(inflationRate: val);
-    _recalculate();
+    final res = _computeResult(inflationRate: val);
+    state = state.copyWith(inflationRate: val, result: res);
     _persistSettings();
   }
 
   void setExpectedReturn(double val) {
     _isUserModified = true;
-    state = state.copyWith(expectedReturn: val);
-    _recalculate();
+    final res = _computeResult(expectedReturn: val);
+    state = state.copyWith(expectedReturn: val, result: res);
     _persistSettings();
   }
 
   void setStepUpSavings(double val) {
     _isUserModified = true;
-    state = state.copyWith(stepUpSavings: val);
-    _recalculate();
+    final res = _computeResult(stepUpSavings: val);
+    state = state.copyWith(stepUpSavings: val, result: res);
     _persistSettings();
   }
 
   void setUseCustomStartingCorpus(bool val) {
     _isUserModified = true;
-    state = state.copyWith(useCustomStartingCorpus: val);
-    _recalculate();
+    final res = _computeResult(useCustomStartingCorpus: val);
+    state = state.copyWith(useCustomStartingCorpus: val, result: res);
     _persistSettings();
   }
 
   void setCustomStartingCorpus(double val) {
     _isUserModified = true;
-    state = state.copyWith(customStartingCorpus: val);
-    _recalculate();
+    final res = _computeResult(customStartingCorpus: val);
+    state = state.copyWith(customStartingCorpus: val, result: res);
     _persistSettings();
   }
 
   void setUseCustomMonthlySavings(bool val) {
     _isUserModified = true;
-    state = state.copyWith(useCustomMonthlySavings: val);
-    _recalculate();
+    final res = _computeResult(useCustomMonthlySavings: val);
+    state = state.copyWith(useCustomMonthlySavings: val, result: res);
     _persistSettings();
   }
 
   void setCustomMonthlySavings(double val) {
     _isUserModified = true;
-    state = state.copyWith(customMonthlySavings: val);
-    _recalculate();
+    final res = _computeResult(customMonthlySavings: val);
+    state = state.copyWith(customMonthlySavings: val, result: res);
     _persistSettings();
   }
 
   void setLeanMultiplier(double val) {
     _isUserModified = true;
-    state = state.copyWith(leanMultiplier: val);
-    _recalculate();
+    final res = _computeResult(leanMultiplier: val);
+    state = state.copyWith(leanMultiplier: val, result: res);
   }
 
   void setFatMultiplier(double val) {
     _isUserModified = true;
-    state = state.copyWith(fatMultiplier: val);
-    _recalculate();
+    final res = _computeResult(fatMultiplier: val);
+    state = state.copyWith(fatMultiplier: val, result: res);
   }
 
   void setBaristaPartTimePercent(double val) {
     _isUserModified = true;
-    state = state.copyWith(baristaPartTimePercent: val);
-    _recalculate();
+    final res = _computeResult(baristaPartTimePercent: val);
+    state = state.copyWith(baristaPartTimePercent: val, result: res);
   }
 
   void _recalculate() {
-    final portfolioState = _ref.read(portfolioProvider);
-    final projState = _ref.read(projectionProvider);
-
-    final startingCorpus = state.useCustomStartingCorpus
-        ? state.customStartingCorpus
-        : portfolioState.summary.totalNetWorth;
-
-    final monthlySavings = state.useCustomMonthlySavings
-        ? state.customMonthlySavings
-        : portfolioState.summary.totalMonthlySipInflow;
-
-    final result = _useCase.execute(
-      currentNetWorth: startingCorpus,
-      currentMonthlySavings: monthlySavings,
-      monthlyExpenses: state.monthlyExpenses,
-      swrPercent: state.swrPercent,
-      inflationPercent: state.inflationRate,
-      annualReturnPercent: state.expectedReturn,
-      stepUpSavingsPercent: state.stepUpSavings,
-      currentAge: projState.currentAge,
-      targetRetirementAge: projState.targetRetirementAge,
-      leanMultiplier: state.leanMultiplier,
-      fatMultiplier: state.fatMultiplier,
-      baristaPartTimePercent: state.baristaPartTimePercent,
-    );
-
+    final result = _computeResult();
     state = state.copyWith(result: result);
   }
 }

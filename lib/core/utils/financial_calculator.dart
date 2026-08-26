@@ -39,20 +39,23 @@ class FinancialCalculator {
     final monthlyRate = r > 0 ? (math.pow(1.0 + r, 1.0 / 12.0) - 1.0) : 0.0;
     final annualStepUp = stepUpPercent / 100.0;
 
+    if (monthlyRate <= 0) {
+      return calculateTotalSipCapitalInvested(
+        monthlyAmount: monthlyAmount,
+        years: years,
+        stepUpPercent: stepUpPercent,
+      );
+    }
+
     double totalFutureValue = 0.0;
+    double currentMonthlyAmount = monthlyAmount;
+    final onePlusRate = 1.0 + monthlyRate;
 
     for (int month = 0; month < totalMonths; month++) {
-      final currentYear = month ~/ 12;
-      // Step-up increases monthly amount each full year
-      final currentMonthlyAmount = monthlyAmount * math.pow(1.0 + annualStepUp, currentYear);
-      // Months remaining to compound until end of period
-      final remainingMonths = totalMonths - month;
-      
-      if (monthlyRate > 0) {
-        totalFutureValue += currentMonthlyAmount * math.pow(1.0 + monthlyRate, remainingMonths);
-      } else {
-        totalFutureValue += currentMonthlyAmount;
+      if (month > 0 && month % 12 == 0) {
+        currentMonthlyAmount *= (1.0 + annualStepUp);
       }
+      totalFutureValue = (totalFutureValue + currentMonthlyAmount) * onePlusRate;
     }
 
     return totalFutureValue;
@@ -68,11 +71,18 @@ class FinancialCalculator {
     final totalMonths = (years * 12).round();
     final annualStepUp = stepUpPercent / 100.0;
     double totalInvested = 0.0;
+    double currentMonthlyAmount = monthlyAmount;
 
-    for (int month = 0; month < totalMonths; month++) {
-      final currentYear = month ~/ 12;
-      final currentMonthlyAmount = monthlyAmount * math.pow(1.0 + annualStepUp, currentYear);
-      totalInvested += currentMonthlyAmount;
+    final fullYears = totalMonths ~/ 12;
+    final remMonths = totalMonths % 12;
+
+    for (int y = 0; y < fullYears; y++) {
+      totalInvested += currentMonthlyAmount * 12.0;
+      currentMonthlyAmount *= (1.0 + annualStepUp);
+    }
+
+    if (remMonths > 0) {
+      totalInvested += currentMonthlyAmount * remMonths;
     }
 
     return totalInvested;
@@ -226,9 +236,7 @@ class FinancialCalculator {
 
       for (int m = 1; m <= 12; m++) {
         if (currentCorpus <= 0) {
-          if (depletionAge == null) {
-            depletionAge = startAge + (y - 1) + ((m - 1) / 12.0);
-          }
+          depletionAge ??= startAge + (y - 1) + ((m - 1) / 12.0);
           currentCorpus = 0.0;
           continue;
         }
@@ -360,6 +368,12 @@ class FinancialCalculator {
       }
     }
 
+    // Precalculate yearly withdrawal amounts to avoid math.pow in trial loops
+    final List<double> yearlyWithdrawals = List<double>.generate(
+      totalYears + 1,
+      (y) => y == 0 ? 0.0 : effectiveStartingMonthlyWithdrawal * math.pow(1.0 + annualStepUp, y - 1),
+    );
+
     // Store corpus trajectories across all trials: [year 0..totalYears][trial 0..trials-1]
     final List<List<double>> yearlyTrialBalances =
         List.generate(totalYears + 1, (_) => List<double>.filled(trials, 0.0));
@@ -378,8 +392,7 @@ class FinancialCalculator {
           currentCorpus = math.max(0.0, currentCorpus - milestoneCost);
         }
 
-        final double monthlyWithdrawalForYear =
-            effectiveStartingMonthlyWithdrawal * math.pow(1.0 + annualStepUp, y - 1);
+        final double monthlyWithdrawalForYear = yearlyWithdrawals[y];
 
         if (currentCorpus <= 0) {
           yearlyTrialBalances[y][t] = 0.0;
@@ -562,9 +575,7 @@ class FinancialCalculator {
 
       for (int m = 1; m <= 12; m++) {
         if (currentStressedCorpus <= 0) {
-          if (depletionAge == null) {
-            depletionAge = startAge + (y - 1) + ((m - 1) / 12.0);
-          }
+          depletionAge ??= startAge + (y - 1) + ((m - 1) / 12.0);
           currentStressedCorpus = 0.0;
           continue;
         }
@@ -619,11 +630,37 @@ class FinancialCalculator {
   }) {
     if (targetEndAge <= startAge || initialMonthlyWithdrawal <= 0) return 0.0;
 
+    final totalYears = targetEndAge - startAge;
+    double estimatedTotalOutflow = initialMonthlyWithdrawal * 12 * totalYears;
+    for (final m in milestoneExpenses) {
+      if (m.isEnabled) estimatedTotalOutflow += m.amount;
+    }
+    double high = math.max(estimatedTotalOutflow * 4.0, 1000000.0);
     double low = 0.0;
-    double high = 1e12; // 1 Trillion upper bound
 
-    // Binary search for 45 iterations (precision < 0.1 currency unit)
-    for (int i = 0; i < 45; i++) {
+    bool isHighSustainable(double testCorpus) {
+      final res = calculateSwp(
+        initialCorpus: testCorpus,
+        initialMonthlyWithdrawal: initialMonthlyWithdrawal,
+        annualReturnPercent: annualReturnPercent,
+        annualWithdrawalStepUpPercent: annualWithdrawalStepUpPercent,
+        startAge: startAge,
+        targetEndAge: targetEndAge,
+        currentAge: currentAge,
+        isWithdrawalInTodayTerms: isWithdrawalInTodayTerms,
+        annualInflationPercent: annualInflationPercent,
+        milestoneExpenses: milestoneExpenses,
+        computeRecommendation: false,
+      );
+      return res.isSustainable && res.finalCorpus >= 0;
+    }
+
+    while (!isHighSustainable(high) && high < 1e12) {
+      high *= 2.0;
+    }
+
+    // Binary search for 25 iterations (precision < 0.01 currency unit)
+    for (int i = 0; i < 25; i++) {
       final mid = (low + high) / 2.0;
       final result = calculateSwp(
         initialCorpus: mid,
@@ -658,7 +695,7 @@ class FinancialCalculator {
     required int startAge,
     required int targetEndAge,
     double targetSuccessRatePercent = 80.0,
-    int trials = 500,
+    int trials = 200,
     int randomSeed = 42,
     int? currentAge,
     bool isWithdrawalInTodayTerms = false,
@@ -667,10 +704,38 @@ class FinancialCalculator {
   }) {
     if (targetEndAge <= startAge || initialMonthlyWithdrawal <= 0) return 0.0;
 
+    final totalYears = targetEndAge - startAge;
+    double estimatedTotalOutflow = initialMonthlyWithdrawal * 12 * totalYears;
+    for (final m in milestoneExpenses) {
+      if (m.isEnabled) estimatedTotalOutflow += m.amount;
+    }
+    double high = math.max(estimatedTotalOutflow * 6.0, 1000000.0);
     double low = 0.0;
-    double high = 1e12;
 
-    for (int i = 0; i < 30; i++) {
+    bool isHighSufficient(double testCorpus) {
+      final res = runMonteCarloSimulation(
+        initialCorpus: testCorpus,
+        initialMonthlyWithdrawal: initialMonthlyWithdrawal,
+        meanAnnualReturnPercent: meanAnnualReturnPercent,
+        annualVolatilityPercent: annualVolatilityPercent,
+        annualWithdrawalStepUpPercent: annualWithdrawalStepUpPercent,
+        startAge: startAge,
+        targetEndAge: targetEndAge,
+        trials: trials,
+        randomSeed: randomSeed,
+        currentAge: currentAge,
+        isWithdrawalInTodayTerms: isWithdrawalInTodayTerms,
+        annualInflationPercent: annualInflationPercent,
+        milestoneExpenses: milestoneExpenses,
+      );
+      return res.successRatePercent >= targetSuccessRatePercent;
+    }
+
+    while (!isHighSufficient(high) && high < 1e12) {
+      high *= 2.0;
+    }
+
+    for (int i = 0; i < 18; i++) {
       final mid = (low + high) / 2.0;
       final result = runMonteCarloSimulation(
         initialCorpus: mid,
@@ -713,10 +778,36 @@ class FinancialCalculator {
   }) {
     if (targetEndAge <= startAge || initialMonthlyWithdrawal <= 0) return 0.0;
 
+    final totalYears = targetEndAge - startAge;
+    double estimatedTotalOutflow = initialMonthlyWithdrawal * 12 * totalYears;
+    for (final m in milestoneExpenses) {
+      if (m.isEnabled) estimatedTotalOutflow += m.amount;
+    }
+    double high = math.max(estimatedTotalOutflow * 6.0, 1000000.0);
     double low = 0.0;
-    double high = 1e12;
 
-    for (int i = 0; i < 35; i++) {
+    bool isHighResilient(double testCorpus) {
+      final res = runCrisisStressTest(
+        scenario: scenario,
+        initialCorpus: testCorpus,
+        initialMonthlyWithdrawal: initialMonthlyWithdrawal,
+        baselineAnnualReturnPercent: baselineAnnualReturnPercent,
+        annualWithdrawalStepUpPercent: annualWithdrawalStepUpPercent,
+        startAge: startAge,
+        targetEndAge: targetEndAge,
+        currentAge: currentAge,
+        isWithdrawalInTodayTerms: isWithdrawalInTodayTerms,
+        annualInflationPercent: annualInflationPercent,
+        milestoneExpenses: milestoneExpenses,
+      );
+      return res.isResilient && res.stressedFinalCorpus >= 0;
+    }
+
+    while (!isHighResilient(high) && high < 1e12) {
+      high *= 2.0;
+    }
+
+    for (int i = 0; i < 20; i++) {
       final mid = (low + high) / 2.0;
       final result = runCrisisStressTest(
         scenario: scenario,

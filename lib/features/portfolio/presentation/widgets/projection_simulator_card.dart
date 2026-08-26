@@ -143,6 +143,7 @@ class ProjectionSimulatorCard extends ConsumerWidget {
               final ageSlider = CustomFinancialSlider(
                 label: 'Current Age',
                 valueDisplay: '${projState.currentAge} yrs',
+                valueFormatter: (val) => '${val.round()} yrs',
                 value: projState.currentAge.toDouble(),
                 min: 18,
                 max: 70,
@@ -155,6 +156,7 @@ class ProjectionSimulatorCard extends ConsumerWidget {
               final retireSlider = CustomFinancialSlider(
                 label: 'Target Retirement Age',
                 valueDisplay: '${projState.targetRetirementAge} yrs',
+                valueFormatter: (val) => '${val.round()} yrs',
                 value: projState.targetRetirementAge.toDouble(),
                 min: 30,
                 max: 85,
@@ -167,6 +169,7 @@ class ProjectionSimulatorCard extends ConsumerWidget {
               final inflationSlider = CustomFinancialSlider(
                 label: 'Annual Inflation Rate',
                 valueDisplay: '${projState.annualInflationPercent.toStringAsFixed(1)}%',
+                valueFormatter: (val) => '${val.toStringAsFixed(1)}%',
                 value: projState.annualInflationPercent,
                 min: 0.0,
                 max: 15.0,
@@ -179,6 +182,7 @@ class ProjectionSimulatorCard extends ConsumerWidget {
               final stepUpSlider = CustomFinancialSlider(
                 label: 'Annual SIP Step-up',
                 valueDisplay: '${projState.globalStepUpPercent.toStringAsFixed(0)}%',
+                valueFormatter: (val) => '${val.toStringAsFixed(0)}%',
                 value: projState.globalStepUpPercent,
                 min: 0.0,
                 max: 25.0,
@@ -247,9 +251,10 @@ class ProjectionSimulatorCard extends ConsumerWidget {
               final effectiveMaxY = maxVal > 0 ? (maxVal * 1.25) : 100000.0;
               final interval = (effectiveMaxY / 4).clamp(1.0, double.infinity);
 
-              return SizedBox(
-                height: 280,
-                child: LineChart(
+              return RepaintBoundary(
+                child: SizedBox(
+                  height: 280,
+                  child: LineChart(
                   LineChartData(
                     minY: 0,
                     maxY: effectiveMaxY,
@@ -373,8 +378,9 @@ class ProjectionSimulatorCard extends ConsumerWidget {
                   ],
                 ),
               ),
-            );
-          }),
+            ),
+          );
+        }),
           const SizedBox(height: 16),
             // Scenario Legend
             Wrap(

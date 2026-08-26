@@ -110,145 +110,147 @@ class NetWorthAreaChart extends ConsumerWidget {
               final effectiveMaxY = maxVal > 0 ? (maxVal * 1.25) : 100000.0;
               final interval = (effectiveMaxY / 4).clamp(1.0, double.infinity);
 
-              return SizedBox(
-                height: 250,
-                child: LineChart(
-                  LineChartData(
-                    minY: 0,
-                    maxY: effectiveMaxY,
-                    clipData: const FlClipData.none(),
-                    gridData: FlGridData(
-                      show: true,
-                      drawVerticalLine: false,
-                      horizontalInterval: interval,
-                      getDrawingHorizontalLine: (value) {
-                        return FlLine(
-                          color: AppColors.border.withOpacity(0.6),
-                          strokeWidth: 1,
-                          dashArray: [4, 4],
-                        );
-                      },
-                    ),
-                    titlesData: FlTitlesData(
-                      show: true,
-                      rightTitles: const AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          reservedSize: 16,
-                          getTitlesWidget: _emptyTitleWidget,
-                        ),
+              return RepaintBoundary(
+                child: SizedBox(
+                  height: 250,
+                  child: LineChart(
+                    LineChartData(
+                      minY: 0,
+                      maxY: effectiveMaxY,
+                      clipData: const FlClipData.none(),
+                      gridData: FlGridData(
+                        show: true,
+                        drawVerticalLine: false,
+                        horizontalInterval: interval,
+                        getDrawingHorizontalLine: (value) {
+                          return FlLine(
+                            color: AppColors.border.withOpacity(0.6),
+                            strokeWidth: 1,
+                            dashArray: [4, 4],
+                          );
+                        },
                       ),
-                      topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      bottomTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          reservedSize: 30,
-                          interval: (pointsToDisplay.length / 5).clamp(1.0, 10.0),
-                          getTitlesWidget: (value, meta) {
-                            final int idx = value.toInt();
-                            if (idx < 0 || idx >= pointsToDisplay.length) {
-                              return const SizedBox.shrink();
-                            }
-                            final p = pointsToDisplay[idx];
-                            return Padding(
-                              padding: const EdgeInsets.only(top: 8),
-                              child: Text(
-                                'Age ${p.age}',
+                      titlesData: FlTitlesData(
+                        show: true,
+                        rightTitles: const AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 16,
+                            getTitlesWidget: _emptyTitleWidget,
+                          ),
+                        ),
+                        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 30,
+                            interval: (pointsToDisplay.length / 5).clamp(1.0, 10.0),
+                            getTitlesWidget: (value, meta) {
+                              final int idx = value.toInt();
+                              if (idx < 0 || idx >= pointsToDisplay.length) {
+                                return const SizedBox.shrink();
+                              }
+                              final p = pointsToDisplay[idx];
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: Text(
+                                  'Age ${p.age}',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 10,
+                                    color: AppColors.textMuted,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        leftTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 56,
+                            interval: interval,
+                            getTitlesWidget: (value, meta) {
+                              return Text(
+                                CurrencyFormatter.formatCompact(value, currency: currency, includeDecimals: false),
                                 style: GoogleFonts.inter(
                                   fontSize: 10,
                                   color: AppColors.textMuted,
-                                  fontWeight: FontWeight.w500,
+                                  fontWeight: FontWeight.w600,
                                 ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                      leftTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          reservedSize: 56,
-                          interval: interval,
-                          getTitlesWidget: (value, meta) {
-                            return Text(
-                              CurrencyFormatter.formatCompact(value, currency: currency, includeDecimals: false),
-                              style: GoogleFonts.inter(
-                                fontSize: 10,
-                                color: AppColors.textMuted,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                    borderData: FlBorderData(show: false),
-                    lineTouchData: LineTouchData(
-                      touchTooltipData: LineTouchTooltipData(
-                        fitInsideHorizontally: true,
-                        fitInsideVertically: true,
-                        maxContentWidth: 260,
-                        tooltipPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        getTooltipColor: (_) => AppColors.surfaceCard.withOpacity(0.95),
-                        tooltipBorder: const BorderSide(color: AppColors.gold, width: 1),
-                        tooltipBorderRadius: const BorderRadius.all(Radius.circular(8)),
-                        getTooltipItems: (List<LineBarSpot> touchedSpots) {
-                          return touchedSpots.map((spot) {
-                            final idx = spot.x.toInt();
-                            if (idx < 0 || idx >= pointsToDisplay.length) return null;
-                            final p = pointsToDisplay[idx];
-                            final isBase = spot.barIndex == 0;
-                            return LineTooltipItem(
-                              isBase
-                                  ? 'Age ${p.age} (Yr ${p.year})\nNet Worth: ${CurrencyFormatter.formatCompact(spot.y, currency: currency)}'
-                                  : 'Capital Invested: ${CurrencyFormatter.formatCompact(spot.y, currency: currency)}',
-                              GoogleFonts.inter(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: isBase ? AppColors.goldLight : AppColors.textSecondary,
-                              ),
-                            );
-                          }).toList();
-                        },
-                      ),
-                    ),
-                    lineBarsData: [
-                      // Line 1: Gold Gradient Base Net Worth Area
-                      LineChartBarData(
-                        spots: List.generate(pointsToDisplay.length, (i) {
-                          return FlSpot(i.toDouble(), pointsToDisplay[i].baseValue);
-                        }),
-                        isCurved: true,
-                        curveSmoothness: 0.25,
-                        color: AppColors.gold,
-                        barWidth: 3,
-                        isStrokeCapRound: true,
-                        dotData: const FlDotData(show: false),
-                        belowBarData: BarAreaData(
-                          show: true,
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              AppColors.gold.withOpacity(0.35),
-                              AppColors.gold.withOpacity(0.0),
-                            ],
+                              );
+                            },
                           ),
                         ),
                       ),
-                      // Line 2: Invested Capital Baseline (Dashed Slate)
-                      LineChartBarData(
-                        spots: List.generate(pointsToDisplay.length, (i) {
-                          return FlSpot(i.toDouble(), pointsToDisplay[i].totalInvested);
-                        }),
-                        isCurved: true,
-                        curveSmoothness: 0.2,
-                        color: AppColors.textSecondary.withOpacity(0.7),
-                        barWidth: 2,
-                        dashArray: [5, 5],
-                        dotData: const FlDotData(show: false),
+                      borderData: FlBorderData(show: false),
+                      lineTouchData: LineTouchData(
+                        touchTooltipData: LineTouchTooltipData(
+                          fitInsideHorizontally: true,
+                          fitInsideVertically: true,
+                          maxContentWidth: 260,
+                          tooltipPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          getTooltipColor: (_) => AppColors.surfaceCard.withOpacity(0.95),
+                          tooltipBorder: const BorderSide(color: AppColors.gold, width: 1),
+                          tooltipBorderRadius: const BorderRadius.all(Radius.circular(8)),
+                          getTooltipItems: (List<LineBarSpot> touchedSpots) {
+                            return touchedSpots.map((spot) {
+                              final idx = spot.x.toInt();
+                              if (idx < 0 || idx >= pointsToDisplay.length) return null;
+                              final p = pointsToDisplay[idx];
+                              final isBase = spot.barIndex == 0;
+                              return LineTooltipItem(
+                                isBase
+                                    ? 'Age ${p.age} (Yr ${p.year})\nNet Worth: ${CurrencyFormatter.formatCompact(spot.y, currency: currency)}'
+                                    : 'Capital Invested: ${CurrencyFormatter.formatCompact(spot.y, currency: currency)}',
+                                GoogleFonts.inter(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: isBase ? AppColors.goldLight : AppColors.textSecondary,
+                                ),
+                              );
+                            }).toList();
+                          },
+                        ),
                       ),
-                    ],
+                      lineBarsData: [
+                        // Line 1: Gold Gradient Base Net Worth Area
+                        LineChartBarData(
+                          spots: List.generate(pointsToDisplay.length, (i) {
+                            return FlSpot(i.toDouble(), pointsToDisplay[i].baseValue);
+                          }),
+                          isCurved: true,
+                          curveSmoothness: 0.25,
+                          color: AppColors.gold,
+                          barWidth: 3,
+                          isStrokeCapRound: true,
+                          dotData: const FlDotData(show: false),
+                          belowBarData: BarAreaData(
+                            show: true,
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                AppColors.gold.withOpacity(0.35),
+                                AppColors.gold.withOpacity(0.0),
+                              ],
+                            ),
+                          ),
+                        ),
+                        // Line 2: Invested Capital Baseline (Dashed Slate)
+                        LineChartBarData(
+                          spots: List.generate(pointsToDisplay.length, (i) {
+                            return FlSpot(i.toDouble(), pointsToDisplay[i].totalInvested);
+                          }),
+                          isCurved: true,
+                          curveSmoothness: 0.2,
+                          color: AppColors.textSecondary.withOpacity(0.7),
+                          barWidth: 2,
+                          dashArray: [5, 5],
+                          dotData: const FlDotData(show: false),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );

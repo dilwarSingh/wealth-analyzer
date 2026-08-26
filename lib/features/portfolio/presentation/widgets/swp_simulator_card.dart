@@ -382,6 +382,7 @@ class _SwpSimulatorCardState extends ConsumerState<SwpSimulatorCard> {
                   CustomFinancialSlider(
                     label: '',
                     valueDisplay: '${CurrencyFormatter.formatCompact(swpState.monthlyWithdrawal, currency: currency)} / mo',
+                    valueFormatter: (val) => '${CurrencyFormatter.formatCompact(val, currency: currency)} / mo',
                     value: swpState.monthlyWithdrawal.clamp(1000.0, 500000.0),
                     min: 1000,
                     max: 500000,
@@ -429,6 +430,7 @@ class _SwpSimulatorCardState extends ConsumerState<SwpSimulatorCard> {
               final cagrSlider = CustomFinancialSlider(
                 label: 'Post-Retirement Return',
                 valueDisplay: '${swpState.postRetirementCagr.toStringAsFixed(1)}% CAGR',
+                valueFormatter: (val) => '${val.toStringAsFixed(1)}% CAGR',
                 value: swpState.postRetirementCagr.clamp(3.0, 15.0),
                 min: 3.0,
                 max: 15.0,
@@ -441,6 +443,7 @@ class _SwpSimulatorCardState extends ConsumerState<SwpSimulatorCard> {
               final stepUpSlider = CustomFinancialSlider(
                 label: 'Withdrawal Inflation Increase',
                 valueDisplay: '${swpState.inflationStepUp.toStringAsFixed(1)}% / yr',
+                valueFormatter: (val) => '${val.toStringAsFixed(1)}% / yr',
                 value: swpState.inflationStepUp.clamp(0.0, 12.0),
                 min: 0.0,
                 max: 12.0,
@@ -453,6 +456,7 @@ class _SwpSimulatorCardState extends ConsumerState<SwpSimulatorCard> {
               final lifeAgeSlider = CustomFinancialSlider(
                 label: 'Target Lifespan Age',
                 valueDisplay: '${swpState.targetLifeAge} yrs',
+                valueFormatter: (val) => '${val.round()} yrs',
                 value: swpState.targetLifeAge.toDouble().clamp((retirementAge + 5).toDouble(), 100.0),
                 min: (retirementAge + 5).toDouble(),
                 max: 100.0,
@@ -823,9 +827,10 @@ class _SwpSimulatorCardState extends ConsumerState<SwpSimulatorCard> {
           ],
         ),
         const SizedBox(height: 12),
-        SizedBox(
-          height: 250,
-          child: LineChart(
+        RepaintBoundary(
+          child: SizedBox(
+            height: 250,
+            child: LineChart(
             LineChartData(
               minY: 0,
               maxY: maxY,
@@ -967,7 +972,8 @@ class _SwpSimulatorCardState extends ConsumerState<SwpSimulatorCard> {
             ),
           ),
         ),
-      ],
+      ),
+    ],
     );
   }
 
@@ -1244,9 +1250,10 @@ class _SwpSimulatorCardState extends ConsumerState<SwpSimulatorCard> {
           ],
         ),
         const SizedBox(height: 12),
-        SizedBox(
-          height: 250,
-          child: LineChart(
+        RepaintBoundary(
+          child: SizedBox(
+            height: 250,
+            child: LineChart(
             LineChartData(
               minY: 0,
               maxY: maxY,
@@ -1394,7 +1401,8 @@ class _SwpSimulatorCardState extends ConsumerState<SwpSimulatorCard> {
             ),
           ),
         ),
-      ],
+      ),
+    ],
     );
   }
 
@@ -2284,9 +2292,10 @@ class _SwpSimulatorCardState extends ConsumerState<SwpSimulatorCard> {
           ],
         ),
         const SizedBox(height: 12),
-        SizedBox(
-          height: 240,
-          child: LineChart(
+        RepaintBoundary(
+          child: SizedBox(
+            height: 240,
+            child: LineChart(
             LineChartData(
               minY: 0,
               maxY: maxY,
@@ -2421,7 +2430,8 @@ class _SwpSimulatorCardState extends ConsumerState<SwpSimulatorCard> {
             ),
           ),
         ),
-      ],
+      ),
+    ],
     );
   }
 
