@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'swp_models.dart';
 
 enum FireFlavor {
   standard('Standard FIRE', '100% of current annual expenses covered forever.'),
@@ -21,6 +22,7 @@ class FireYearlyPoint extends Equatable {
   final double passiveIncome;
   final double coverageRatioPercent;
   final bool isFireAchieved;
+  final double milestoneOutflows;
 
   const FireYearlyPoint({
     required this.year,
@@ -31,6 +33,7 @@ class FireYearlyPoint extends Equatable {
     required this.passiveIncome,
     required this.coverageRatioPercent,
     required this.isFireAchieved,
+    this.milestoneOutflows = 0.0,
   });
 
   @override
@@ -43,6 +46,7 @@ class FireYearlyPoint extends Equatable {
         passiveIncome,
         coverageRatioPercent,
         isFireAchieved,
+        milestoneOutflows,
       ];
 }
 
@@ -60,6 +64,9 @@ class FireCalculationResult extends Equatable {
   final double yearsToFire;
   final double fireAge;
   final int fireYear;
+  final double recommendedSwr;
+  final int retirementHorizonYears;
+  final List<SwpMilestoneExpense> preFireMilestones;
   final List<FireYearlyPoint> yearlyPoints;
 
   const FireCalculationResult({
@@ -76,6 +83,9 @@ class FireCalculationResult extends Equatable {
     required this.yearsToFire,
     required this.fireAge,
     required this.fireYear,
+    this.recommendedSwr = 3.50,
+    this.retirementHorizonYears = 35,
+    this.preFireMilestones = const [],
     required this.yearlyPoints,
   });
 
@@ -94,6 +104,9 @@ class FireCalculationResult extends Equatable {
       yearsToFire: 0.0,
       fireAge: 0.0,
       fireYear: 0,
+      recommendedSwr: 3.50,
+      retirementHorizonYears: 35,
+      preFireMilestones: [],
       yearlyPoints: [],
     );
   }
@@ -113,6 +126,9 @@ class FireCalculationResult extends Equatable {
         yearsToFire,
         fireAge,
         fireYear,
+        recommendedSwr,
+        retirementHorizonYears,
+        preFireMilestones,
         yearlyPoints,
       ];
 }

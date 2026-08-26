@@ -1,5 +1,6 @@
 import '../../../../core/utils/financial_calculator.dart';
 import '../entities/fire_models.dart';
+import '../entities/swp_models.dart';
 
 class CalculateFireProjectionUseCase {
   FireCalculationResult execute({
@@ -12,9 +13,11 @@ class CalculateFireProjectionUseCase {
     double stepUpSavingsPercent = 0.0,
     required int currentAge,
     required int targetRetirementAge,
+    int targetLifeAge = 85,
     double leanMultiplier = 0.75,
     double fatMultiplier = 1.35,
     double baristaPartTimePercent = 40.0,
+    List<SwpMilestoneExpense> preFireMilestones = const [],
   }) {
     return FinancialCalculator.calculateFireTrajectory(
       currentNetWorth: currentNetWorth,
@@ -26,9 +29,11 @@ class CalculateFireProjectionUseCase {
       stepUpSavingsPercent: stepUpSavingsPercent,
       currentAge: currentAge,
       targetRetirementAge: targetRetirementAge,
+      targetLifeAge: targetLifeAge,
       leanMultiplier: leanMultiplier,
       fatMultiplier: fatMultiplier,
       baristaPartTimePercent: baristaPartTimePercent,
+      preFireMilestones: preFireMilestones,
     );
   }
 }

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../domain/entities/fire_models.dart';
+import '../../domain/entities/swp_models.dart';
 import '../../domain/repositories/portfolio_repository.dart';
 import '../../domain/usecases/calculate_fire_projection.dart';
 import 'currency_viewmodel.dart';
@@ -21,6 +22,7 @@ class FireState {
   final double leanMultiplier;
   final double fatMultiplier;
   final double baristaPartTimePercent;
+  final List<SwpMilestoneExpense> preFireMilestones;
   final FireCalculationResult result;
 
   const FireState({
@@ -36,6 +38,7 @@ class FireState {
     this.leanMultiplier = 0.75,
     this.fatMultiplier = 1.35,
     this.baristaPartTimePercent = 0.40,
+    this.preFireMilestones = const [],
     required this.result,
   });
 
@@ -53,6 +56,7 @@ class FireState {
       leanMultiplier: 0.75,
       fatMultiplier: 1.35,
       baristaPartTimePercent: 0.40,
+      preFireMilestones: const [],
       result: FireCalculationResult.empty(),
     );
   }
@@ -70,6 +74,7 @@ class FireState {
     double? leanMultiplier,
     double? fatMultiplier,
     double? baristaPartTimePercent,
+    List<SwpMilestoneExpense>? preFireMilestones,
     FireCalculationResult? result,
   }) {
     return FireState(
@@ -85,6 +90,7 @@ class FireState {
       leanMultiplier: leanMultiplier ?? this.leanMultiplier,
       fatMultiplier: fatMultiplier ?? this.fatMultiplier,
       baristaPartTimePercent: baristaPartTimePercent ?? this.baristaPartTimePercent,
+      preFireMilestones: preFireMilestones ?? this.preFireMilestones,
       result: result ?? this.result,
     );
   }
@@ -182,6 +188,7 @@ class FireViewModel extends StateNotifier<FireState> {
     double? leanMultiplier,
     double? fatMultiplier,
     double? baristaPartTimePercent,
+    List<SwpMilestoneExpense>? preFireMilestones,
   }) {
     final portfolioState = _ref.read(portfolioProvider);
     final projState = _ref.read(projectionProvider);
@@ -207,6 +214,7 @@ class FireViewModel extends StateNotifier<FireState> {
       leanMultiplier: leanMultiplier ?? state.leanMultiplier,
       fatMultiplier: fatMultiplier ?? state.fatMultiplier,
       baristaPartTimePercent: baristaPartTimePercent ?? state.baristaPartTimePercent,
+      preFireMilestones: preFireMilestones ?? state.preFireMilestones,
     );
   }
 
@@ -289,6 +297,52 @@ class FireViewModel extends StateNotifier<FireState> {
     _isUserModified = true;
     final res = _computeResult(baristaPartTimePercent: val);
     state = state.copyWith(baristaPartTimePercent: val, result: res);
+  }
+
+  void addPreFireMilestone(SwpMilestoneExpense milestone) {
+    _isUserModified = true;
+    final updated = [...state.preFireMilestones, milestone];
+    final res = _computeResult(preFireMilestones: updated);
+    state = state.copyWith(preFireMilestones: updated, result: res);
+  }
+
+  void updatePreFireMilestone(SwpMilestoneExpense milestone) {
+    _isUserModified = true;
+    final updated = state.preFireMilestones.map((m) => m.id == milestone.id ? milestone : m).toList();
+    final res = _computeResult(preFireMilestones: updated);
+    state = state.copyWith(preFireMilestones: updated, result: res);
+  }
+
+  void removePreFireMilestone(String id) {
+    _isUserModified = true;
+    final updated = state.preFireMilestones.where((m) => m.id != id).toList();
+    final res = _computeResult(preFireMilestones: updated);
+    state = state.copyWith(preFireMilestones: updated, result: res);
+  }
+
+  void togglePreFireMilestone(String id) {
+    _isUserModified = true;
+    final updated = state.preFireMilestones.map((m) {
+      if (m.id == id) {
+        return m.copyWith(isEnabled: !m.isEnabled);
+      }
+      return m;
+    }).toList();
+    final res = _computeResult(preFireMilestones: updated);
+    state = state.copyWith(preFireMilestones: updated, result: res);
+  }
+
+  void syncFromSwpMilestones(List<SwpMilestoneExpense> swpMilestones) {
+    _isUserModified = true;
+    final existingIds = state.preFireMilestones.map((m) => m.id).toSet();
+    final updated = List<SwpMilestoneExpense>.from(state.preFireMilestones);
+    for (final sm in swpMilestones) {
+      if (!existingIds.contains(sm.id)) {
+        updated.add(sm);
+      }
+    }
+    final res = _computeResult(preFireMilestones: updated);
+    state = state.copyWith(preFireMilestones: updated, result: res);
   }
 
   void _recalculate() {

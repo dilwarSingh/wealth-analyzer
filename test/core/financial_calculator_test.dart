@@ -489,5 +489,61 @@ void main() {
         expect(rec.stagflationDepletionAge!, lessThan(85.0));
       });
     });
+
+    group('FIRE Accuracy, Horizon-Based SWR & Milestones Tests', () {
+      test('Given various retirement horizons, When calculateRecommendedSwr is evaluated, Then returns accurate actuarial safe rates', () {
+        expect(FinancialCalculator.calculateRecommendedSwr(55), equals(2.75));
+        expect(FinancialCalculator.calculateRecommendedSwr(45), equals(3.00));
+        expect(FinancialCalculator.calculateRecommendedSwr(38), equals(3.25));
+        expect(FinancialCalculator.calculateRecommendedSwr(32), equals(3.50));
+        expect(FinancialCalculator.calculateRecommendedSwr(28), equals(3.75));
+        expect(FinancialCalculator.calculateRecommendedSwr(22), equals(4.00));
+        expect(FinancialCalculator.calculateRecommendedSwr(15), equals(4.50));
+      });
+
+      test('Given pre-retirement capital milestone (₹40L at age 35), When calculateFireTrajectory is run, Then deducts milestone and delays FIRE achievement', () {
+        // Baseline without milestone
+        final baseline = FinancialCalculator.calculateFireTrajectory(
+          currentNetWorth: 2000000.0, // 20 Lakhs
+          currentMonthlySavings: 50000.0, // 50k/mo
+          monthlyExpenses: 60000.0,
+          swrPercent: 3.5,
+          inflationPercent: 6.0,
+          annualReturnPercent: 12.0,
+          currentAge: 30,
+          targetRetirementAge: 55,
+        );
+
+        // With ₹40 Lakh outflow at age 35 (year 5)
+        final withMilestone = FinancialCalculator.calculateFireTrajectory(
+          currentNetWorth: 2000000.0,
+          currentMonthlySavings: 50000.0,
+          monthlyExpenses: 60000.0,
+          swrPercent: 3.5,
+          inflationPercent: 6.0,
+          annualReturnPercent: 12.0,
+          currentAge: 30,
+          targetRetirementAge: 55,
+          preFireMilestones: [
+            const SwpMilestoneExpense(
+              id: 'm1',
+              name: 'House Downpayment',
+              targetAge: 35,
+              amount: 4000000.0,
+              inTodayTerms: true,
+              isEnabled: true,
+            ),
+          ],
+        );
+
+        final pointAge35 = withMilestone.yearlyPoints.firstWhere((p) => p.age == 35);
+        expect(pointAge35.milestoneOutflows, greaterThan(4000000.0)); // Inflated value
+        expect(pointAge35.netWorth, lessThan(baseline.yearlyPoints.firstWhere((p) => p.age == 35).netWorth));
+        expect(withMilestone.yearsToFire, greaterThan(baseline.yearsToFire));
+        expect(withMilestone.recommendedSwr, greaterThan(0));
+        expect(withMilestone.retirementHorizonYears, greaterThan(0));
+      });
+    });
   });
 }
+

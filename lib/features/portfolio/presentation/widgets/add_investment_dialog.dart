@@ -625,10 +625,12 @@ class _AddInvestmentDialogState extends ConsumerState<AddInvestmentDialog> {
           ),
           if (controller != null && currency != null) ...[
             const SizedBox(width: 4),
-            CompactAmountLabel(
-              controller: controller,
-              currency: currency,
-              accentColor: AppColors.goldLight,
+            Flexible(
+              child: CompactAmountLabel(
+                controller: controller,
+                currency: currency,
+                accentColor: AppColors.goldLight,
+              ),
             ),
           ],
         ],

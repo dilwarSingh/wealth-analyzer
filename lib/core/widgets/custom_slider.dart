@@ -15,6 +15,8 @@ class CustomFinancialSlider extends StatefulWidget {
   final String? subtitle;
   final IconData? icon;
   final Color activeColor;
+  final String? tooltipMessage;
+  final Widget? headerAction;
 
   const CustomFinancialSlider({
     super.key,
@@ -30,6 +32,8 @@ class CustomFinancialSlider extends StatefulWidget {
     this.subtitle,
     this.icon,
     this.activeColor = AppColors.gold,
+    this.tooltipMessage,
+    this.headerAction,
   });
 
   @override
@@ -84,9 +88,51 @@ class _CustomFinancialSliderState extends State<CustomFinancialSlider> {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                    if (widget.tooltipMessage != null) ...[
+                      const SizedBox(width: 5),
+                      Tooltip(
+                        message: widget.tooltipMessage!,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        margin: const EdgeInsets.symmetric(horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1E293B),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: widget.activeColor.withOpacity(0.4), width: 1),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.5),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        textStyle: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white,
+                          height: 1.35,
+                        ),
+                        preferBelow: false,
+                        verticalOffset: 12,
+                        waitDuration: const Duration(milliseconds: 150),
+                        showDuration: const Duration(seconds: 5),
+                        child: MouseRegion(
+                          cursor: SystemMouseCursors.help,
+                          child: Icon(
+                            Icons.info_outline_rounded,
+                            size: 13,
+                            color: AppColors.textMuted.withOpacity(0.9),
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
+              if (widget.headerAction != null) ...[
+                const SizedBox(width: 8),
+                widget.headerAction!,
+              ],
               const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),

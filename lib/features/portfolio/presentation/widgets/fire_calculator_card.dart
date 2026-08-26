@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,10 +9,12 @@ import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/widgets/custom_slider.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../domain/entities/fire_models.dart';
+import '../../domain/entities/swp_models.dart';
 import '../viewmodels/currency_viewmodel.dart';
 import '../viewmodels/fire_viewmodel.dart';
 import '../viewmodels/portfolio_viewmodel.dart';
 import '../viewmodels/projection_viewmodel.dart';
+import '../viewmodels/swp_viewmodel.dart';
 import 'compact_amount_suffix_badge.dart';
 
 class FireCalculatorCard extends ConsumerStatefulWidget {
@@ -27,6 +30,7 @@ class _FireCalculatorCardState extends ConsumerState<FireCalculatorCard> {
   late final TextEditingController _customSavingsController;
   bool _isGuideExpanded = false;
   bool _isTableExpanded = true;
+  bool _isMilestonesExpanded = false;
 
   @override
   void initState() {
@@ -135,6 +139,10 @@ class _FireCalculatorCardState extends ConsumerState<FireCalculatorCard> {
 
           // Controls & Inputs Section
           _buildInputsSection(fireState, currentNetWorth, currentMonthlySavings, currency, projState),
+          const SizedBox(height: 20),
+
+          // Pre-Retirement Capital Milestones Section
+          _buildPreFireMilestonesSection(fireState, currency, projState),
           const SizedBox(height: 24),
 
           // Multi-FIRE Comparison Cards (Standard, Lean, Fat, Coast, Barista)
@@ -637,6 +645,7 @@ class _FireCalculatorCardState extends ConsumerState<FireCalculatorCard> {
               divisions: 199,
               icon: Icons.receipt_long_rounded,
               activeColor: AppColors.crimsonLight,
+              tooltipMessage: 'Baseline monthly living costs today. Standard FIRE multiplies this by your SWR factor (e.g. 25x–33x) to calculate your total target freedom number.',
               onChanged: (val) {
                 ref.read(fireProvider.notifier).setMonthlyExpenses(val);
                 _expenseController.text = val.toStringAsFixed(0);
@@ -652,6 +661,8 @@ class _FireCalculatorCardState extends ConsumerState<FireCalculatorCard> {
               divisions: 40,
               icon: Icons.shield_rounded,
               activeColor: AppColors.gold,
+              tooltipMessage: 'Annual percentage withdrawn from your corpus. Classic 4% rule (25x) was designed for 30-year retirements. For longer horizons (40–50+ years), 2.75%–3.50% (28x–36x) is significantly safer.',
+              headerAction: _buildSmartSwrRecommendationChip(fireState.result, fireState.swrPercent),
               onChanged: (val) => ref.read(fireProvider.notifier).setSwrPercent(val),
             );
 
@@ -664,6 +675,7 @@ class _FireCalculatorCardState extends ConsumerState<FireCalculatorCard> {
               divisions: 30,
               icon: Icons.trending_up_rounded,
               activeColor: AppColors.profit,
+              tooltipMessage: 'Compounded annual growth rate of your investment portfolio during accumulation. Typical diversified equity funds deliver 10–14% over long horizons.',
               onChanged: (val) => ref.read(fireProvider.notifier).setExpectedReturn(val),
             );
 
@@ -676,6 +688,7 @@ class _FireCalculatorCardState extends ConsumerState<FireCalculatorCard> {
               divisions: 20,
               icon: Icons.price_change_rounded,
               activeColor: AppColors.loss,
+              tooltipMessage: 'Expected annual rise in living costs. In India/emerging markets, CPI typically averages 5–7% per year, compounding long-term expense requirements.',
               onChanged: (val) => ref.read(fireProvider.notifier).setInflationRate(val),
             );
 
@@ -715,6 +728,525 @@ class _FireCalculatorCardState extends ConsumerState<FireCalculatorCard> {
           },
         ),
       ],
+    );
+  }
+
+  // =========================================================================
+  // SMART SWR RECOMMENDATION CHIP
+  // =========================================================================
+  Widget _buildSmartSwrRecommendationChip(FireCalculationResult result, double currentSwr) {
+    final recommended = result.recommendedSwr;
+    final isAlreadyMatching = (currentSwr - recommended).abs() < 0.05;
+
+    return InkWell(
+      onTap: isAlreadyMatching
+          ? null
+          : () => ref.read(fireProvider.notifier).setSwrPercent(recommended),
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+        decoration: BoxDecoration(
+          color: isAlreadyMatching
+              ? AppColors.profit.withOpacity(0.12)
+              : AppColors.gold.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: isAlreadyMatching
+                ? AppColors.profit.withOpacity(0.4)
+                : AppColors.gold.withOpacity(0.5),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isAlreadyMatching ? Icons.verified_rounded : Icons.lightbulb_rounded,
+              size: 13,
+              color: isAlreadyMatching ? AppColors.profit : AppColors.gold,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              '💡 Rec: ${recommended.toStringAsFixed(2)}% (${result.retirementHorizonYears}y)',
+              style: GoogleFonts.inter(
+                fontSize: 10.5,
+                fontWeight: FontWeight.w700,
+                color: isAlreadyMatching ? AppColors.profit : AppColors.goldLight,
+              ),
+            ),
+            if (!isAlreadyMatching) ...[
+              const SizedBox(width: 5),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                decoration: BoxDecoration(
+                  color: AppColors.gold,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+                child: Text(
+                  'Apply',
+                  style: GoogleFonts.inter(
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.black,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  // =========================================================================
+  // PRE-RETIREMENT CAPITAL MILESTONES SECTION
+  // =========================================================================
+  Widget _buildPreFireMilestonesSection(
+    FireState fireState,
+    CurrencyType currency,
+    ProjectionState projState,
+  ) {
+    final milestones = fireState.preFireMilestones;
+    final activeMilestones = milestones.where((m) => m.isEnabled).toList();
+
+    return GlassContainer(
+      padding: const EdgeInsets.all(16),
+      borderRadius: 14,
+      borderColor: AppColors.border,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: InkWell(
+                  onTap: () => setState(() => _isMilestonesExpanded = !_isMilestonesExpanded),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: AppColors.gold.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.flag_rounded, size: 16, color: AppColors.gold),
+                      ),
+                      const SizedBox(width: 10),
+                      Flexible(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    'PRE-RETIREMENT GOALS & CAPITAL OUTFLOWS',
+                                    style: AppTypography.heading3.copyWith(fontSize: 13),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                  decoration: BoxDecoration(
+                                    color: activeMilestones.isNotEmpty
+                                        ? AppColors.gold.withOpacity(0.15)
+                                        : AppColors.surfaceLight,
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: activeMilestones.isNotEmpty
+                                          ? AppColors.gold.withOpacity(0.4)
+                                          : AppColors.border,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    '${activeMilestones.length} Active',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                      color: activeMilestones.isNotEmpty ? AppColors.goldLight : AppColors.textMuted,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Major one-off expenses (Home purchase, Child Education) deducted from your net worth before FIRE.',
+                              style: AppTypography.bodySmall.copyWith(fontSize: 11),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.goldLight,
+                      side: const BorderSide(color: AppColors.borderGold),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    icon: const Icon(Icons.sync_rounded, size: 14),
+                    label: Text(
+                      'Sync from SWP',
+                      style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600),
+                    ),
+                    onPressed: () {
+                      final swpMilestones = ref.read(swpProvider).milestoneExpenses;
+                      if (swpMilestones.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('No milestones found in SWP Simulator to sync.')),
+                        );
+                      } else {
+                        ref.read(fireProvider.notifier).syncFromSwpMilestones(swpMilestones);
+                        setState(() => _isMilestonesExpanded = true);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Synced ${swpMilestones.length} milestones from SWP!')),
+                        );
+                      }
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.gold,
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    icon: const Icon(Icons.add_rounded, size: 14),
+                    label: Text(
+                      'Add Goal',
+                      style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700),
+                    ),
+                    onPressed: () => _showMilestoneFormDialog(
+                      context,
+                      currentAge: projState.currentAge,
+                      targetRetirementAge: projState.targetRetirementAge,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  IconButton(
+                    icon: Icon(
+                      _isMilestonesExpanded ? Icons.expand_less_rounded : Icons.expand_more_rounded,
+                      color: AppColors.textMuted,
+                    ),
+                    onPressed: () => setState(() => _isMilestonesExpanded = !_isMilestonesExpanded),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          if (_isMilestonesExpanded) ...[
+            const SizedBox(height: 14),
+            if (milestones.isEmpty)
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceLight.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.info_outline_rounded, size: 16, color: AppColors.textMuted),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'No pre-retirement capital goals added yet. Add big expenses (like Home Downpayment or Child Education) to see how they impact your exact FIRE age.',
+                        style: GoogleFonts.inter(fontSize: 11.5, color: AppColors.textSecondary),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              Column(
+                children: milestones.map((milestone) {
+                  final inflatedCost = (milestone.inTodayTerms && milestone.targetAge > projState.currentAge)
+                      ? milestone.amount * math.pow(1.0 + fireState.inflationRate / 100.0, (milestone.targetAge - projState.currentAge).toDouble())
+                      : milestone.amount;
+
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceCard,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: milestone.isEnabled ? AppColors.gold.withOpacity(0.4) : AppColors.border,
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      child: Row(
+                        children: [
+                          Checkbox(
+                            value: milestone.isEnabled,
+                            activeColor: AppColors.gold,
+                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            onChanged: (_) => ref.read(fireProvider.notifier).togglePreFireMilestone(milestone.id),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        milestone.name,
+                                        style: GoogleFonts.inter(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w700,
+                                          color: milestone.isEnabled ? AppColors.textPrimary : AppColors.textMuted,
+                                          decoration: milestone.isEnabled ? null : TextDecoration.lineThrough,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.surfaceLight,
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        'Age ${milestone.targetAge}',
+                                        style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.textMuted),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  milestone.inTodayTerms
+                                      ? '${CurrencyFormatter.formatCompact(milestone.amount, currency: currency)} in today\'s value → ${CurrencyFormatter.formatCompact(inflatedCost, currency: currency)} at Age ${milestone.targetAge}'
+                                      : CurrencyFormatter.formatCompact(milestone.amount, currency: currency),
+                                  style: GoogleFonts.inter(
+                                    fontSize: 11,
+                                    color: milestone.isEnabled ? AppColors.goldLight : AppColors.textMuted,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.edit_outlined, size: 18, color: AppColors.goldLight),
+                            tooltip: 'Edit Goal',
+                            onPressed: () => _showMilestoneFormDialog(
+                              context,
+                              existingMilestone: milestone,
+                              currentAge: projState.currentAge,
+                              targetRetirementAge: projState.targetRetirementAge,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline_rounded, size: 18, color: AppColors.textMuted),
+                            tooltip: 'Remove Goal',
+                            onPressed: () => ref.read(fireProvider.notifier).removePreFireMilestone(milestone.id),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  void _showMilestoneFormDialog(
+    BuildContext context, {
+    SwpMilestoneExpense? existingMilestone,
+    required int currentAge,
+    required int targetRetirementAge,
+  }) {
+    final isEditing = existingMilestone != null;
+    final nameController = TextEditingController(
+      text: isEditing ? existingMilestone.name : 'Pre-FIRE Goal',
+    );
+    final amountController = TextEditingController(
+      text: isEditing
+          ? (existingMilestone.amount % 1 == 0
+              ? existingMilestone.amount.toInt().toString()
+              : existingMilestone.amount.toString())
+          : '1000000',
+    );
+    int targetAge = isEditing
+        ? existingMilestone.targetAge.clamp(currentAge + 1, targetRetirementAge + 10)
+        : (currentAge + 5).clamp(currentAge + 1, targetRetirementAge + 10);
+    bool inTodayTerms = isEditing ? existingMilestone.inTodayTerms : true;
+    final currency = ref.read(currencyProvider);
+
+    showDialog(
+      context: context,
+      builder: (dialogCtx) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: AppColors.surfaceCard,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+                side: const BorderSide(color: AppColors.border),
+              ),
+              title: Row(
+                children: [
+                  Icon(
+                    isEditing ? Icons.edit_note_rounded : Icons.flag_circle_rounded,
+                    color: AppColors.gold,
+                    size: 22,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    isEditing ? 'Edit Pre-FIRE Goal' : 'Add Pre-FIRE Goal',
+                    style: AppTypography.heading3.copyWith(fontSize: 16),
+                  ),
+                ],
+              ),
+              content: SizedBox(
+                width: 380,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Goal / Outflow Name', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMuted)),
+                    const SizedBox(height: 4),
+                    TextField(
+                      controller: nameController,
+                      style: GoogleFonts.inter(fontSize: 13, color: AppColors.textPrimary),
+                      decoration: InputDecoration(
+                        isDense: true,
+                        hintText: 'e.g. Home Downpayment, Child Education',
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        filled: true,
+                        fillColor: AppColors.surfaceLight,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.border)),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Amount', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMuted)),
+                        CompactAmountLabel(
+                          controller: amountController,
+                          currency: currency,
+                          accentColor: AppColors.goldLight,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    TextField(
+                      controller: amountController,
+                      keyboardType: TextInputType.number,
+                      style: GoogleFonts.inter(fontSize: 13, color: AppColors.textPrimary),
+                      decoration: InputDecoration(
+                        isDense: true,
+                        prefixText: '${currency.symbol} ',
+                        prefixStyle: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        filled: true,
+                        fillColor: AppColors.surfaceLight,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.border)),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Target Age', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMuted)),
+                        Text('Age $targetAge', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.goldLight)),
+                      ],
+                    ),
+                    Slider(
+                      value: targetAge.toDouble().clamp((currentAge + 1).toDouble(), (targetRetirementAge + 15).toDouble()),
+                      min: (currentAge + 1).toDouble(),
+                      max: (targetRetirementAge + 15).toDouble(),
+                      divisions: ((targetRetirementAge + 15) - (currentAge + 1)).clamp(1, 100),
+                      activeColor: AppColors.gold,
+                      onChanged: (v) => setDialogState(() => targetAge = v.round()),
+                    ),
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: inTodayTerms,
+                          activeColor: AppColors.gold,
+                          onChanged: (v) => setDialogState(() => inTodayTerms = v ?? true),
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            'Amount is in today\'s purchasing power',
+                            style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogCtx),
+                  child: Text('Cancel', style: GoogleFonts.inter(color: AppColors.textMuted)),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.gold,
+                    foregroundColor: Colors.black,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  onPressed: () {
+                    final amount = double.tryParse(amountController.text.replaceAll(',', '').trim()) ?? 0.0;
+                    if (amount > 0) {
+                      final name = nameController.text.trim().isEmpty ? 'Pre-FIRE Goal' : nameController.text.trim();
+                      if (isEditing) {
+                        ref.read(fireProvider.notifier).updatePreFireMilestone(
+                          existingMilestone.copyWith(
+                            name: name,
+                            targetAge: targetAge,
+                            amount: amount,
+                            inTodayTerms: inTodayTerms,
+                          ),
+                        );
+                      } else {
+                        final id = DateTime.now().millisecondsSinceEpoch.toString();
+                        ref.read(fireProvider.notifier).addPreFireMilestone(
+                          SwpMilestoneExpense(
+                            id: id,
+                            name: name,
+                            targetAge: targetAge,
+                            amount: amount,
+                            inTodayTerms: inTodayTerms,
+                            isEnabled: true,
+                          ),
+                        );
+                      }
+                      Navigator.pop(dialogCtx);
+                    }
+                  },
+                  child: Text(isEditing ? 'Save Changes' : 'Add Goal', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 

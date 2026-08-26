@@ -209,7 +209,7 @@ void main() {
       container.read(projectionProvider.notifier).setTargetRetirementAge(63);
       container.read(projectionProvider.notifier).setAnnualInflation(7.5);
       container.read(projectionProvider.notifier).setGlobalStepUp(12.0);
-      await Future.delayed(const Duration(milliseconds: 30));
+      await tester.pump(const Duration(milliseconds: 100));
       await tester.pumpAndSettle();
 
       // SIMULATE APP RESTART: Launch session 2 with fresh ProviderScope and widgets
@@ -223,8 +223,7 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
-      await Future.delayed(const Duration(milliseconds: 30));
+      await tester.pump(const Duration(milliseconds: 100));
       await tester.pumpAndSettle();
 
       // Verify Session 2 restored USD currency

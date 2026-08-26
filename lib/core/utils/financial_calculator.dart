@@ -1039,6 +1039,17 @@ class FinancialCalculator {
     );
   }
 
+  /// Calculates dynamic recommended Safe Withdrawal Rate (SWR %) based on retirement horizon in years.
+  static double calculateRecommendedSwr(int horizonYears) {
+    if (horizonYears >= 50) return 2.75;
+    if (horizonYears >= 40) return 3.00;
+    if (horizonYears >= 35) return 3.25;
+    if (horizonYears >= 30) return 3.50;
+    if (horizonYears >= 25) return 3.75;
+    if (horizonYears >= 20) return 4.00;
+    return 4.50;
+  }
+
   /// Calculates comprehensive FIRE targets and year-by-year accumulation crossover trajectory.
   static FireCalculationResult calculateFireTrajectory({
     required double currentNetWorth,
@@ -1050,9 +1061,11 @@ class FinancialCalculator {
     double stepUpSavingsPercent = 0.0,
     required int currentAge,
     required int targetRetirementAge,
+    int targetLifeAge = 85,
     double leanMultiplier = 0.75,
     double fatMultiplier = 1.35,
     double baristaPartTimePercent = 40.0,
+    List<SwpMilestoneExpense> preFireMilestones = const [],
   }) {
     final annualExpensesToday = (monthlyExpenses * 12.0).clamp(0.0, double.infinity);
     final effectiveSwr = swrPercent.clamp(1.0, 10.0);
@@ -1100,6 +1113,22 @@ class FinancialCalculator {
       }
 
       final double currentInfFactor = math.pow(1.0 + (inflationPercent / 100.0), y).toDouble();
+
+      // Deduct any pre-retirement capital milestones occurring at this age
+      double yearlyMilestoneOutflows = 0.0;
+      final int currentAgeInYear = currentAge + y;
+      for (final milestone in preFireMilestones) {
+        if (milestone.isEnabled && milestone.targetAge == currentAgeInYear && milestone.amount > 0) {
+          final double milestoneCost = milestone.inTodayTerms
+              ? milestone.amount * currentInfFactor
+              : milestone.amount;
+          yearlyMilestoneOutflows += milestoneCost;
+        }
+      }
+      if (yearlyMilestoneOutflows > 0) {
+        runningNetWorth = math.max(0.0, runningNetWorth - yearlyMilestoneOutflows);
+      }
+
       final double yearlyExpenses = annualExpensesToday * currentInfFactor;
       final double inflationAdjustedFireTarget = yearlyExpenses * fireMultiplier;
       final double passiveIncome = runningNetWorth * (effectiveSwr / 100.0);
@@ -1127,12 +1156,20 @@ class FinancialCalculator {
         passiveIncome: passiveIncome,
         coverageRatioPercent: coverageRatio,
         isFireAchieved: isAchieved,
+        milestoneOutflows: yearlyMilestoneOutflows,
       ));
     }
 
     final double finalYearsToFire = exactYearsToFire ?? 0.0;
     final double finalFireAge = currentAge + finalYearsToFire;
     final int finalFireYear = currentYear + finalYearsToFire.round();
+
+    // Retirement Horizon: from projected FIRE Age (or targetRetirementAge if not reached) to targetLifeAge
+    final double effectiveRetirementAge = (isAlreadyFire || exactYearsToFire != null)
+        ? finalFireAge
+        : targetRetirementAge.toDouble();
+    final int retirementHorizonYears = math.max(10, (targetLifeAge - effectiveRetirementAge).round());
+    final double recommendedSwr = calculateRecommendedSwr(retirementHorizonYears);
 
     return FireCalculationResult(
       standardFireNumber: standardFireNumber,
@@ -1148,6 +1185,9 @@ class FinancialCalculator {
       yearsToFire: finalYearsToFire,
       fireAge: finalFireAge,
       fireYear: finalFireYear,
+      recommendedSwr: recommendedSwr,
+      retirementHorizonYears: retirementHorizonYears,
+      preFireMilestones: preFireMilestones,
       yearlyPoints: yearlyPoints,
     );
   }
