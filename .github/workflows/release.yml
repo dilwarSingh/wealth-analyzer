@@ -154,7 +154,7 @@ jobs:
         run: |
           mkdir -p dist
           cd build/macos/Build/Products/Release
-          zip -r ../../../../dist/wealth-analyzer-macos.zip wealth_projector.app
+          zip -r -y "${GITHUB_WORKSPACE}/dist/wealth-analyzer-macos.zip" wealth_projector.app
 
       - name: Upload macOS Artifact
         uses: actions/upload-artifact@v4
@@ -187,7 +187,7 @@ jobs:
         run: |
           mkdir -p dist
           cd build/web
-          zip -r ../../dist/wealth-analyzer-web.zip .
+          zip -r "${GITHUB_WORKSPACE}/dist/wealth-analyzer-web.zip" .
 
       - name: Upload Web Artifact
         uses: actions/upload-artifact@v4
