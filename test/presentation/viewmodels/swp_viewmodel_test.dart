@@ -206,7 +206,7 @@ void main() {
       expect(container.read(swpProvider).monthlyWithdrawal, equals(50000.0));
     });
 
-    test('Given depleted SWP plan, When evaluated, Then populates solvency recommendation with required targets and shortfalls', () {
+    test('Given depleted SWP plan, When evaluated, Then populates solvency recommendation with required targets and shortfalls', () async {
       final container = ProviderContainer(
         overrides: [
           localDataSourceProvider.overrideWithValue(MockInMemoryDataSource()),
@@ -218,6 +218,8 @@ void main() {
       notifier.setUseCustomCorpus(true);
       notifier.setCustomCorpusAmount(1000000.0); // Only ₹10 Lakhs
       notifier.setMonthlyWithdrawal(100000.0); // High withdrawal ₹1 Lakh/mo
+
+      await Future.delayed(const Duration(milliseconds: 300));
 
       final state = container.read(swpProvider);
       expect(state.swpResult.isSustainable, isFalse);

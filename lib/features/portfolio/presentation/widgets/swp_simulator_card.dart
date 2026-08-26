@@ -14,6 +14,7 @@ import '../viewmodels/currency_viewmodel.dart';
 import '../viewmodels/projection_viewmodel.dart';
 import '../viewmodels/risk_analysis_viewmodel.dart';
 import '../viewmodels/swp_viewmodel.dart';
+import 'compact_amount_suffix_badge.dart';
 
 class SwpSimulatorCard extends ConsumerStatefulWidget {
   const SwpSimulatorCard({super.key});
@@ -254,6 +255,11 @@ class _SwpSimulatorCardState extends ConsumerState<SwpSimulatorCard> {
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
+                              ),
+                              CompactAmountLabel(
+                                controller: _customCorpusController,
+                                currency: currency,
+                                accentColor: AppColors.goldLight,
                               ),
                             ],
                           ),
@@ -2838,6 +2844,7 @@ class _SwpSimulatorCardState extends ConsumerState<SwpSimulatorCard> {
         ? existingMilestone.targetAge.clamp(retirementAge + 1, targetLifeAge)
         : (retirementAge + 5).clamp(retirementAge + 1, targetLifeAge);
     bool inTodayTerms = isEditing ? existingMilestone.inTodayTerms : true;
+    final currency = ref.read(currencyProvider);
 
     showDialog(
       context: context,
@@ -2884,7 +2891,17 @@ class _SwpSimulatorCardState extends ConsumerState<SwpSimulatorCard> {
                       ),
                     ),
                     const SizedBox(height: 14),
-                    Text('Amount', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMuted)),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Amount', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMuted)),
+                        CompactAmountLabel(
+                          controller: amountController,
+                          currency: currency,
+                          accentColor: AppColors.goldLight,
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 4),
                     TextField(
                       controller: amountController,
@@ -2892,6 +2909,8 @@ class _SwpSimulatorCardState extends ConsumerState<SwpSimulatorCard> {
                       style: GoogleFonts.inter(fontSize: 13, color: AppColors.textPrimary),
                       decoration: InputDecoration(
                         isDense: true,
+                        prefixText: '${currency.symbol} ',
+                        prefixStyle: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                         filled: true,
                         fillColor: AppColors.surfaceLight,

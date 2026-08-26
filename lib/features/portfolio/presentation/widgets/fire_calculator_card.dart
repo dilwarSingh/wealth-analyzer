@@ -12,6 +12,7 @@ import '../viewmodels/currency_viewmodel.dart';
 import '../viewmodels/fire_viewmodel.dart';
 import '../viewmodels/portfolio_viewmodel.dart';
 import '../viewmodels/projection_viewmodel.dart';
+import 'compact_amount_suffix_badge.dart';
 
 class FireCalculatorCard extends ConsumerStatefulWidget {
   const FireCalculatorCard({super.key});
@@ -542,6 +543,19 @@ class _FireCalculatorCardState extends ConsumerState<FireCalculatorCard> {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
+                            ),
+                            CompactAmountLabel(
+                              controller: _customCorpusController,
+                              currency: currency,
+                              prefix: 'Corpus: ',
+                              accentColor: AppColors.goldLight,
+                            ),
+                            const SizedBox(width: 4),
+                            CompactAmountLabel(
+                              controller: _customSavingsController,
+                              currency: currency,
+                              prefix: 'SIP: ',
+                              accentColor: AppColors.goldLight,
                             ),
                           ],
                         ),

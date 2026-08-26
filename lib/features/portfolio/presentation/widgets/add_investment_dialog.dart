@@ -10,6 +10,7 @@ import '../../domain/entities/asset_category.dart';
 import '../../domain/entities/investment_asset.dart';
 import '../viewmodels/currency_viewmodel.dart';
 import '../viewmodels/portfolio_viewmodel.dart';
+import 'compact_amount_suffix_badge.dart';
 
 class AddInvestmentDialog extends ConsumerStatefulWidget {
   final InvestmentAsset? assetToEdit;
@@ -267,6 +268,8 @@ class _AddInvestmentDialogState extends ConsumerState<AddInvestmentDialog> {
                                     _selectedType == InvestmentType.monthlySip
                                         ? 'The recurring installment amount you invest each month into this SIP.'
                                         : 'The initial principal amount or original capital you spent to acquire this asset.',
+                                    controller: _investedController,
+                                    currency: currency,
                                   ),
                                   TextFormField(
                                     controller: _investedController,
@@ -296,6 +299,8 @@ class _AddInvestmentDialogState extends ConsumerState<AddInvestmentDialog> {
                                     _selectedType == InvestmentType.monthlySip
                                         ? 'Current total market value of units already accumulated so far. Leave blank or 0 if starting fresh today.'
                                         : 'Current live market value of this asset today. Used to compute your unrealized profit or loss.',
+                                    controller: _currentValController,
+                                    currency: currency,
                                   ),
                                   TextFormField(
                                     controller: _currentValController,
@@ -552,60 +557,80 @@ class _AddInvestmentDialogState extends ConsumerState<AddInvestmentDialog> {
     );
   }
 
-  Widget _buildFieldLabel(String label, String tooltipMessage) {
+  Widget _buildFieldLabel(
+    String label,
+    String tooltipMessage, {
+    TextEditingController? controller,
+    CurrencyType? currency,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 5),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Flexible(
-            child: Text(
-              label,
-              style: AppTypography.label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          const SizedBox(width: 5),
-          Tooltip(
-            message: tooltipMessage,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1E293B),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppColors.gold.withOpacity(0.4), width: 1),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.5),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
+          Expanded(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Flexible(
+                  child: Text(
+                    label,
+                    style: AppTypography.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 5),
+                Tooltip(
+                  message: tooltipMessage,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E293B),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.gold.withOpacity(0.4), width: 1),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.5),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  textStyle: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white,
+                    height: 1.35,
+                  ),
+                  preferBelow: false,
+                  verticalOffset: 12,
+                  waitDuration: const Duration(milliseconds: 150),
+                  showDuration: const Duration(seconds: 5),
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.help,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      child: Icon(
+                        Icons.info_outline_rounded,
+                        size: 13,
+                        color: AppColors.textMuted.withOpacity(0.9),
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
-            textStyle: GoogleFonts.inter(
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              color: Colors.white,
-              height: 1.35,
-            ),
-            preferBelow: false,
-            verticalOffset: 12,
-            waitDuration: const Duration(milliseconds: 150),
-            showDuration: const Duration(seconds: 5),
-            child: MouseRegion(
-              cursor: SystemMouseCursors.help,
-              child: Container(
-                padding: const EdgeInsets.all(2),
-                child: Icon(
-                  Icons.info_outline_rounded,
-                  size: 13,
-                  color: AppColors.textMuted.withOpacity(0.9),
-                ),
-              ),
-            ),
           ),
+          if (controller != null && currency != null) ...[
+            const SizedBox(width: 4),
+            CompactAmountLabel(
+              controller: controller,
+              currency: currency,
+              accentColor: AppColors.goldLight,
+            ),
+          ],
         ],
       ),
     );

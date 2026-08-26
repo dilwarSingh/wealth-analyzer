@@ -103,5 +103,26 @@ void main() {
         expect(strZero, equals('0.0%'));
       });
     });
+
+    // -------------------------------------------------------------
+    // 4. formatCompactDenomination (No Currency Symbol)
+    // -------------------------------------------------------------
+    group('formatCompactDenomination', () {
+      test('Given various INR numbers, When formatted, Then returns human readable denominations with trimmed decimals', () {
+        expect(CurrencyFormatter.formatCompactDenomination(15000000.0, currency: CurrencyType.inr), equals('1.5 Cr'));
+        expect(CurrencyFormatter.formatCompactDenomination(10000000.0, currency: CurrencyType.inr), equals('1 Cr'));
+        expect(CurrencyFormatter.formatCompactDenomination(4500000.0, currency: CurrencyType.inr), equals('45 L'));
+        expect(CurrencyFormatter.formatCompactDenomination(125000.0, currency: CurrencyType.inr), equals('1.25 L'));
+        expect(CurrencyFormatter.formatCompactDenomination(50000.0, currency: CurrencyType.inr), equals('50 K'));
+        expect(CurrencyFormatter.formatCompactDenomination(500.0, currency: CurrencyType.inr), equals('500'));
+        expect(CurrencyFormatter.formatCompactDenomination(0.0, currency: CurrencyType.inr), equals(''));
+      });
+
+      test('Given USD amounts, When formatted, Then returns K, M, B compact denominations without currency symbol', () {
+        expect(CurrencyFormatter.formatCompactDenomination(1500000.0, currency: CurrencyType.usd), equals('1.5 M'));
+        expect(CurrencyFormatter.formatCompactDenomination(450000.0, currency: CurrencyType.usd), equals('450 K'));
+        expect(CurrencyFormatter.formatCompactDenomination(2000000000.0, currency: CurrencyType.usd), equals('2 B'));
+      });
+    });
   });
 }
