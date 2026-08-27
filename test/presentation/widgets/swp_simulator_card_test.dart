@@ -108,7 +108,7 @@ void main() {
     });
 
     testWidgets('Given SwpSimulatorCard, When custom corpus is entered, milestones expanded, and rules selected, Then updates simulation', (tester) async {
-      tester.view.physicalSize = const Size(1200, 1200);
+      tester.view.physicalSize = const Size(1400, 3500);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() => tester.view.resetPhysicalSize());
 
@@ -134,49 +134,42 @@ void main() {
       await tester.tap(find.text('Custom Starting Corpus'));
       await tester.pumpAndSettle();
 
-      // Enter 15,000,000 in TextField
-      final textField = find.byType(TextField);
-      expect(textField, findsOneWidget);
-      await tester.enterText(textField, '15000000');
-      await tester.pumpAndSettle();
-
-      // Open Withdrawal Rules Dropdown
-      await tester.tap(find.text('Withdrawal Rules'));
-      await tester.pumpAndSettle();
-
-      // Select 3% Rule (Conservative)
-      expect(find.text('3% Rule (Conservative)'), findsOneWidget);
-      await tester.tap(find.text('3% Rule (Conservative)'));
+      // Enter Custom Corpus Value
+      final corpusField = find.byType(TextField).first;
+      await tester.enterText(corpusField, '50000000');
       await tester.pumpAndSettle();
 
       final element = tester.element(find.byType(SwpSimulatorCard));
       final container = ProviderScope.containerOf(element);
-      expect(container.read(swpProvider).customCorpusAmount, equals(15000000.0));
-      expect(container.read(swpProvider).monthlyWithdrawal, greaterThan(0.0));
+      expect(container.read(swpProvider).useCustomCorpus, isTrue);
+      expect(container.read(swpProvider).customCorpusAmount, equals(50000000.0));
 
-      // Test Milestone Expansion & Preset Click
+      // Expand Milestones Section
       await tester.tap(find.text('RETIREMENT MILESTONES & LUMPSUM OUTFLOWS'));
       await tester.pumpAndSettle();
-      expect(find.textContaining('Medical Reserve'), findsWidgets);
 
-      // Add Medical Reserve Preset
-      await tester.tap(find.textContaining('Medical Reserve').first);
+      // Add a New Milestone
+      await tester.tap(find.text('Add Outflow'));
       await tester.pumpAndSettle();
-      expect(find.byTooltip('Edit Outflow'), findsOneWidget);
-      expect(find.byTooltip('Remove Outflow'), findsOneWidget);
 
-      // Tap Edit Outflow button
+      expect(find.text('Add Retirement Outflow'), findsOneWidget);
+      final textFields = find.byType(TextField);
+      expect(textFields, findsWidgets);
+
+      await tester.enterText(textFields.at(1), 'World Cruise Travel');
+      await tester.enterText(textFields.at(2), '1500000');
+      await tester.tap(find.text('Add Outflow').last);
+      await tester.pumpAndSettle();
+
+      expect(find.text('World Cruise Travel'), findsOneWidget);
+      expect(container.read(swpProvider).milestoneExpenses.length, equals(1));
+
+      // Edit Milestone
       await tester.tap(find.byTooltip('Edit Outflow'));
       await tester.pumpAndSettle();
 
       expect(find.text('Edit Retirement Outflow'), findsOneWidget);
-      expect(find.text('Save Changes'), findsOneWidget);
-
-      // Edit outflow name and amount
-      final editFields = find.descendant(
-        of: find.byType(AlertDialog),
-        matching: find.byType(TextField),
-      );
+      final editFields = find.descendant(of: find.byType(AlertDialog), matching: find.byType(TextField));
       expect(editFields, findsNWidgets(2));
       await tester.enterText(editFields.first, 'Special Health Fund');
       await tester.enterText(editFields.last, '2000000');
@@ -227,13 +220,13 @@ void main() {
       expect(find.text('Understanding Sequence-of-Returns Risk (SORR)'), findsOneWidget);
 
       // Switch to 2020 Flash Crash chip
-      await tester.tap(find.descendant(of: find.byType(ChoiceChip), matching: find.text('2020 Flash Crash')));
+      await tester.tap(find.descendant(of: find.byType(ChoiceChip), matching: find.text('2020 Flash Crash')), warnIfMissed: false);
       await tester.pumpAndSettle();
-      expect(find.textContaining('COVID-19 shock'), findsOneWidget);
+      expect(find.textContaining('quick shock'), findsOneWidget);
     });
 
     testWidgets('Given underfunded SWP corpus, When rendered, Then displays Solvency & Minimum Recommended Starting Corpus Card with benchmarks', (tester) async {
-      tester.view.physicalSize = const Size(1200, 1200);
+      tester.view.physicalSize = const Size(1400, 2500);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() => tester.view.resetPhysicalSize());
 

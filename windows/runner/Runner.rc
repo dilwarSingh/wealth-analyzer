@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.wealthanalyzer" "\0"
-            VALUE "FileDescription", "wealth_projector" "\0"
+            VALUE "FileDescription", "Wealth Analyzer" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "wealth_projector" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 com.wealthanalyzer. All rights reserved." "\0"
             VALUE "OriginalFilename", "wealth_projector.exe" "\0"
-            VALUE "ProductName", "wealth_projector" "\0"
+            VALUE "ProductName", "Wealth Analyzer" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

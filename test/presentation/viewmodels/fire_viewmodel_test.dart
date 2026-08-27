@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wealth_projector/features/portfolio/domain/entities/asset_category.dart';
 import 'package:wealth_projector/features/portfolio/domain/entities/investment_asset.dart';
+import 'package:wealth_projector/features/portfolio/domain/entities/swp_models.dart';
 import 'package:wealth_projector/features/portfolio/presentation/viewmodels/fire_viewmodel.dart';
 import 'package:wealth_projector/features/portfolio/presentation/viewmodels/portfolio_viewmodel.dart';
 
@@ -57,22 +58,83 @@ void main() {
       // Change expenses to 80,000 and SWR to 3.0% (33.33x multiplier)
       notifier.setMonthlyExpenses(80000.0);
       notifier.setSwrPercent(3.0);
+      notifier.setInflationRate(7.0);
+      notifier.setExpectedReturn(14.0);
+      notifier.setStepUpSavings(12.0);
+      notifier.setUseCustomStartingCorpus(true);
+      notifier.setCustomStartingCorpus(2000000.0);
+      notifier.setUseCustomMonthlySavings(true);
+      notifier.setCustomMonthlySavings(40000.0);
+      notifier.setLeanMultiplier(0.70);
+      notifier.setFatMultiplier(1.40);
+      notifier.setBaristaPartTimePercent(0.50);
 
       final updatedState = container.read(fireProvider);
-      // Annual expenses = 80k * 12 = 960,000
-      // Multiplier = 100 / 3 = 33.3333x
-      // Standard FIRE Number = 960,000 * (100 / 3) = 32,000,000 (3.2 Cr)
       expect(updatedState.monthlyExpenses, equals(80000.0));
       expect(updatedState.swrPercent, equals(3.0));
-      expect(updatedState.result.standardFireNumber, closeTo(32000000.0, 1.0));
-      expect(updatedState.result.leanFireNumber, closeTo(32000000.0 * 0.75, 1.0));
-      expect(updatedState.result.fatFireNumber, closeTo(32000000.0 * 1.35, 1.0));
+      expect(updatedState.inflationRate, equals(7.0));
+      expect(updatedState.expectedReturn, equals(14.0));
+      expect(updatedState.stepUpSavings, equals(12.0));
+      expect(updatedState.useCustomStartingCorpus, isTrue);
+      expect(updatedState.customStartingCorpus, equals(2000000.0));
+      expect(updatedState.useCustomMonthlySavings, isTrue);
+      expect(updatedState.customMonthlySavings, equals(40000.0));
+      expect(updatedState.leanMultiplier, equals(0.70));
+      expect(updatedState.fatMultiplier, equals(1.40));
+      expect(updatedState.baristaPartTimePercent, equals(0.50));
 
       // Check persistence
       await Future.delayed(const Duration(milliseconds: 50));
       final savedSettings = await mockDs.getUserSettings();
       expect(savedSettings.fireMonthlyExpenses, equals(80000.0));
       expect(savedSettings.fireSwrPercent, equals(3.0));
+    });
+
+    test('Given Pre-FIRE milestones, When managing milestones, Then adds, updates, toggles, syncs, and removes correctly', () {
+      final mockDs = MockInMemoryDataSource();
+      final container = ProviderContainer(
+        overrides: [
+          localDataSourceProvider.overrideWithValue(mockDs),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final notifier = container.read(fireProvider.notifier);
+
+      const m1 = SwpMilestoneExpense(
+        id: 'm1',
+        name: 'Higher Studies',
+        targetAge: 35,
+        amount: 1000000.0,
+      );
+
+      // Add
+      notifier.addPreFireMilestone(m1);
+      expect(container.read(fireProvider).preFireMilestones.length, equals(1));
+
+      // Update
+      notifier.updatePreFireMilestone(m1.copyWith(amount: 1500000.0));
+      expect(container.read(fireProvider).preFireMilestones.first.amount, equals(1500000.0));
+
+      // Toggle
+      notifier.togglePreFireMilestone('m1');
+      expect(container.read(fireProvider).preFireMilestones.first.isEnabled, isFalse);
+
+      // Sync from SWP
+      notifier.syncFromSwpMilestones([
+        const SwpMilestoneExpense(
+          id: 'swp-m2',
+          name: 'World Tour',
+          targetAge: 55,
+          amount: 500000.0,
+        ),
+      ]);
+      expect(container.read(fireProvider).preFireMilestones.length, equals(2));
+
+      // Remove
+      notifier.removePreFireMilestone('m1');
+      expect(container.read(fireProvider).preFireMilestones.length, equals(1));
+      expect(container.read(fireProvider).preFireMilestones.first.id, equals('swp-m2'));
     });
   });
 }

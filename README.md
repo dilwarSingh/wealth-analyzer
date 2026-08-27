@@ -1,20 +1,85 @@
-# Wealth Analyzer (Wealth Projector) 💎
+# Wealth Analyzer 💎
 
-> **An institutional-grade portfolio projection, systematic withdrawal planning (SWP), and stochastic risk modeling application built with Flutter & Riverpod.**
+> **An institutional-grade wealth projection, systematic withdrawal planning (SWP), and stochastic risk modeling application built with Flutter & Riverpod.**
 
+[![Release Build Matrix](https://github.com/dilwarSingh/wealth-analyzer/actions/workflows/release.yml/badge.svg)](https://github.com/dilwarSingh/wealth-analyzer/actions/workflows/release.yml)
 [![Flutter](https://img.shields.io/badge/Flutter-3.47+-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.0+-0175C2?logo=dart&logoColor=white)](https://dart.dev)
-[![Tests](https://img.shields.io/badge/Tests-127%20Passing%20(100%25)-10B981)](#-automated-testing--quality)
-[![Platform](https://img.shields.io/badge/Platform-Windows%20Desktop%20%7C%20Web%20%7C%20Mobile-EF4444)](#-getting-started--build)
-[![License](https://img.shields.io/badge/License-MIT-F59E0B)](#)
+[![Tests](https://img.shields.io/badge/Tests-141%20Passing%20(100%25)-10B981)](#-automated-testing--quality)
+[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Ubuntu%2022%2F24%20%7C%20Web-EF4444)](#-download--installation)
+[![License](https://img.shields.io/badge/License-MIT-F59E0B)](LICENSE)
 
 ---
 
 ## 📸 Overview
 
-**Wealth Analyzer** is designed for retail and FIRE (Financial Independence, Retire Early) investors to model wealth accumulation, post-retirement decumulation (SWP), calculate multi-FIRE target milestones, and stress-test portfolios against severe market volatility and historical crisis sequences.
+**Wealth Analyzer** is designed for retail and FIRE (Financial Independence, Retire Early) investors to model wealth accumulation, plan post-retirement decumulation (SWP), calculate multi-FIRE target milestones, and stress-test portfolios against severe market volatility and historical crisis sequences.
 
-The application adheres strictly to **Clean Architecture + MVVM**, featuring a sleek **Dark Glassmorphism UI** (`#0B0F19` canvas, `#EF4444` Crimson CTAs, `#F59E0B` Luxe Gold accents).
+The application operates completely offline with local persistence, adheres strictly to **Clean Architecture + MVVM**, and features a sleek **Dark Glassmorphism UI** (`#0B0F19` canvas, `#EF4444` Crimson CTAs, `#F59E0B` Luxe Gold accents).
+
+---
+
+## 📥 Download & Installation
+
+Pre-built native installers and binaries are available on the [**GitHub Releases Page**](https://github.com/dilwarSingh/wealth-analyzer/releases).
+
+### 🪟 Windows (Windows 10 / 11)
+1. Download **`wealth-analyzer-windows-installer-x64.exe`** from the latest release.
+2. Run the installer wizard to install Wealth Analyzer with Start Menu and Desktop shortcuts.
+3. Launch **Wealth Analyzer** from your application menu.
+
+---
+
+### 🐧 Ubuntu / Debian Linux
+
+Native `.deb` packages are compiled and packaged specifically for each LTS release:
+
+#### For Ubuntu 24.04 LTS (Noble Numbat)
+```bash
+# 1. Download the package
+wget https://github.com/dilwarSingh/wealth-analyzer/releases/latest/download/wealth-analyzer-ubuntu-24.04-amd64.deb
+
+# 2. Install using APT (automatically resolves dependencies)
+sudo apt update
+sudo apt install ./wealth-analyzer-ubuntu-24.04-amd64.deb
+
+# 3. Launch from terminal or application launcher
+wealth_projector
+```
+
+#### For Ubuntu 22.04 LTS (Jammy Jellyfish)
+```bash
+# 1. Download the package
+wget https://github.com/dilwarSingh/wealth-analyzer/releases/latest/download/wealth-analyzer-ubuntu-22.04-amd64.deb
+
+# 2. Install using APT
+sudo apt update
+sudo apt install ./wealth-analyzer-ubuntu-22.04-amd64.deb
+
+# 3. Launch from terminal or application launcher
+wealth_projector
+```
+
+---
+
+### 🍎 macOS (Apple Silicon & Intel)
+1. Download **`wealth-analyzer-macos.dmg`** from the latest release.
+2. Open the `.dmg` disk image.
+3. Drag **`wealth_projector.app`** into your **`Applications`** folder.
+4. Open **Wealth Analyzer** from your Applications or Spotlight search.
+
+---
+
+### 🌐 Web (Self-Hosted)
+1. Download **`wealth-analyzer-web.zip`** from the latest release.
+2. Extract the archive into your web server root (Nginx, Apache, or static hosting).
+3. Alternatively, test locally with Python:
+   ```bash
+   unzip wealth-analyzer-web.zip -d wealth-analyzer-web
+   cd wealth-analyzer-web
+   python3 -m http.server 8080
+   ```
+4. Open `http://localhost:8080` in your web browser.
 
 ---
 
@@ -47,17 +112,15 @@ The application adheres strictly to **Clean Architecture + MVVM**, featuring a s
   - **Milestone Solver**: Automatically computes the exact age of crossing ₹1 Crore / $1 Million.
 
 ### 4. 🛡️ SWP Decumulation Simulator & Schedule Table
-- **Today's Purchasing Power Mode (Auto-Inflation)**: Enter monthly living expenses in today's terms (e.g. ₹50,000 / mo), and the simulator automatically compounds it across the accumulation years to compute the starting retirement withdrawal (e.g. ₹2.14 L / mo at Age 50), with a live breakdown callout and a toggle for direct future amounts.
-- **Dynamic Retirement Milestones & Lumpsum Outflows**: Plan customizable one-time retirement outflows (e.g., 🏥 Medical Reserve, 💍 Child Wedding, ✈️ World Tour) with 1-click presets, in-place edit modal dialog, checkboxes, auto-inflation to target age, and deduction from SWP schedules, Monte Carlo trials, and Crisis stress-tests.
-- **Solvency & Minimum Recommended Starting Corpus Engine**: Whenever a plan depletes prematurely or falls below 80% Monte Carlo confidence, the simulator dynamically calculates and displays the exact minimum starting corpus required across:
+- **Today's Purchasing Power Mode (Auto-Inflation)**: Enter monthly living expenses in today's terms (e.g. ₹50,000 / mo), and the simulator automatically compounds it across accumulation years to compute starting retirement withdrawal with live breakdown callouts.
+- **Dynamic Retirement Milestones & Lumpsum Outflows**: Plan customizable one-time retirement outflows (🏥 Medical Reserve, 💍 Child Wedding, ✈️ World Tour) with 1-click presets, in-place edit dialogs, and deduction from SWP schedules, Monte Carlo trials, and Crisis stress-tests.
+- **Solvency & Minimum Recommended Starting Corpus Engine**: Automatically computes the exact minimum starting corpus required across:
   - 📊 **Standard SWP Solvency (100% Horizon)**
   - 🎲 **Monte Carlo Stochastic Solvency** (80% Moderate & 95% Bulletproof Targets)
   - ⚡ **Crisis Resilience Solvency** (2008 GFC Crash-Proof Survival)
-- **Auto-Linked or Custom Starting Corpus**: Inherits final retirement net worth or allows custom lump-sum input.
-- **Configurable Decumulation Controls**: Monthly Withdrawal amount, Post-Retirement CAGR %, Annual Withdrawal Inflation Step-Up %, and Target Life Expectancy Age.
-- **Safe Withdrawal Rules Dropdown**: One-click application of **2% (Ultra-Safe / Early FIRE)**, **3% (Conservative)**, **4% (Standard Trinity Rule)**, and **5% (Aggressive)** rules.
+- **Safe Withdrawal Rules**: One-click application of **2% (Ultra-Safe)**, **3% (Conservative)**, **4% (Standard Trinity Rule)**, and **5% (Aggressive)** rules.
 - **Sustainability KPI Banner**: Identifies whether the plan achieves **Perpetuity / Sustainability** or detects exact **Corpus Depletion Age**.
-- **Interactive Decumulation Chart & Year-by-Year Schedule Table**: Complete breakdown of Year/Age, Opening Corpus, Returns Generated, Amount Withdrawn / Outflows, Closing Corpus, and Health Status (`Healthy`, `Moderate`, `Critical`, `Depleted`).
+- **Interactive Decumulation Chart & Year-by-Year Schedule Table**: Complete breakdown of Year/Age, Opening Corpus, Returns Generated, Amount Withdrawn, Closing Corpus, and Health Status (`Healthy`, `Moderate`, `Critical`, `Depleted`).
 
 ### 5. 🎲 Monte Carlo Probabilistic Simulator (1,000 Stochastic Runs)
 - Runs 1,000 Gaussian stochastic market trials using the **Box-Muller transformation**.
@@ -82,6 +145,8 @@ The application adheres strictly to **Clean Architecture + MVVM**, featuring a s
 ---
 
 ## 🏛️ Architecture & Project Structure
+
+The codebase strictly follows **Clean Architecture + MVVM** with clean separation between business logic, persistence adapters, and presentation layers:
 
 ```
 lib/
@@ -111,47 +176,79 @@ lib/
 
 ## 🧪 Automated Testing & Quality
 
-The codebase contains a **4-layer test suite** with **124 automated tests** passing at **100%**:
+The codebase contains a **4-layer test suite** with **141 automated tests** passing at **100%**:
 
 ```bash
 $ flutter test
-00:10 +124: All tests passed!
+00:14 +141: All tests passed!
 ```
 
-### Test Coverage Layers:
-1. **Layer 1: Core Mathematical Algorithms**: SIP compound interest, effective monthly rate ($i = (1+r)^{1/12}-1$), milestone solver, SWP decumulation, Box-Muller Gaussian RNG, 1,000-run Monte Carlo distribution, and crisis stress-test sequences.
-2. **Layer 2: Domain Use Cases & Data Adapters**: KPI calculation use case, projection scenario use case, SWP use case, Monte Carlo use case, Stress Test use case, Hive model serialization, and repository implementation.
-3. **Layer 3: ViewModels & State Management**: `PortfolioViewModel`, `ProjectionViewModel`, `CurrencyViewModel`, `SwpViewModel`, and `RiskAnalysisViewModel` verifying state transitions and Hive persistence.
-4. **Layer 4: UI Components & Inter-Component Integration**: Widget tests for all cards/charts and end-to-end integration journeys simulating full user flows and app restarts across fresh `ProviderScope`s.
+### Test Coverage Hierarchy:
+1. **Layer 1: Mathematical & Algorithmic Engines**: SIP compound interest, effective monthly rate ($i = (1+r)^{1/12}-1$), milestone solver, SWP decumulation, Box-Muller Gaussian RNG, 1,000-run Monte Carlo distribution, and crisis stress-test sequences.
+2. **Layer 2: Domain Use Cases & Data Adapters**: KPI calculation, projection scenarios, SWP decumulation, Monte Carlo stochastic engine, Stress testing, Hive serialization, and repository contracts.
+3. **Layer 3: ViewModels & State Management**: `PortfolioViewModel`, `ProjectionViewModel`, `CurrencyViewModel`, `SwpViewModel`, and `RiskAnalysisViewModel` validating state transitions and persistent Hive storage.
+4. **Layer 4: UI Widgets & End-to-End Integration**: Widget tests for all cards/charts and end-to-end integration journeys simulating full user flows and app restarts across fresh `ProviderScope`s.
 
 ---
 
-## 🚀 Getting Started & Build
+## 🛠️ Developer Setup & Build from Source
 
 ### Prerequisites
-- Flutter SDK `^3.13.1` (Flutter 3.47+ recommended)
-- Dart SDK `^3.0.0`
-- Windows C++ Build Tools (for Windows desktop target)
+- **Flutter SDK**: `^3.13.1` (Flutter 3.24+ / 3.47+ recommended)
+- **Dart SDK**: `^3.0.0`
+- **Platform Build Tools**:
+  - **Windows**: Visual Studio 2022 with *Desktop development with C++* workload
+  - **Linux**: `sudo apt install clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev`
+  - **macOS**: Xcode with Command Line Tools
+  - **Web**: Google Chrome or Chromium
 
-### Installation & Run
-
+### 1. Clone & Setup
 ```bash
-# 1. Clone the repository
-git clone https://github.com/your-username/wealth_projector.git
-cd wealth_projector_2
+git clone https://github.com/dilwarSingh/wealth-analyzer.git
+cd wealth-analyzer
 
-# 2. Install dependencies
+# Install Flutter dependencies
 flutter pub get
-
-# 3. Run on Windows (Primary Platform Target)
-flutter run -d windows
-
-# 4. Build Windows Release Binary
-flutter build windows
 ```
 
-The release executable will be generated at:
-`build\windows\x64\runner\Release\wealth_projector.exe`
+### 2. Run Tests & Linter
+```bash
+# Run code analysis
+flutter analyze
+
+# Run complete 141-test suite
+flutter test
+```
+
+### 3. Run Locally in Debug Mode
+```bash
+# Windows Desktop
+flutter run -d windows
+
+# Linux Desktop
+flutter run -d linux
+
+# macOS Desktop
+flutter run -d macos
+
+# Web (Chrome)
+flutter run -d chrome
+```
+
+### 4. Build Release Packages Locally
+```bash
+# Windows Release (Generates build/windows/x64/runner/Release/wealth_projector.exe)
+flutter build windows --release
+
+# Linux Release (Generates build/linux/x64/release/bundle/)
+flutter build linux --release
+
+# macOS Release (Generates build/macos/Build/Products/Release/wealth_projector.app)
+flutter build macos --release
+
+# Web Release (Generates build/web/)
+flutter build web --release --base-href "/"
+```
 
 ---
 

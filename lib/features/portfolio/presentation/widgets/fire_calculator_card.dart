@@ -146,14 +146,25 @@ class _FireCalculatorCardState extends ConsumerState<FireCalculatorCard> {
           const SizedBox(height: 24),
 
           // Multi-FIRE Comparison Cards (Standard, Lean, Fat, Coast, Barista)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 4,
             children: [
               Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   const Icon(Icons.grid_view_rounded, size: 18, color: AppColors.gold),
                   const SizedBox(width: 8),
-                  Text('MULTI-FIRE TARGET MILESTONES', style: AppTypography.heading3.copyWith(fontSize: 14)),
+                  Flexible(
+                    child: Text(
+                      'MULTI-FIRE TARGET MILESTONES',
+                      style: AppTypography.heading3.copyWith(fontSize: 14),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 ],
               ),
               Text(
@@ -246,8 +257,11 @@ class _FireCalculatorCardState extends ConsumerState<FireCalculatorCard> {
           const SizedBox(height: 16),
 
           // Readiness Progress Bar
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 4,
             children: [
               Text(
                 'FIRE READINESS: ${result.fireReadinessPercent.toStringAsFixed(1)}%',
@@ -429,116 +443,119 @@ class _FireCalculatorCardState extends ConsumerState<FireCalculatorCard> {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: AppColors.border),
           ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: InkWell(
-                  onTap: () {
-                    ref.read(fireProvider.notifier).setUseCustomStartingCorpus(false);
-                    ref.read(fireProvider.notifier).setUseCustomMonthlySavings(false);
-                  },
-                  borderRadius: BorderRadius.circular(8),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: (!fireState.useCustomStartingCorpus && !fireState.useCustomMonthlySavings)
-                          ? AppColors.surfaceCard
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(8),
-                      border: (!fireState.useCustomStartingCorpus && !fireState.useCustomMonthlySavings)
-                          ? Border.all(color: AppColors.gold, width: 1.5)
-                          : null,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              (!fireState.useCustomStartingCorpus && !fireState.useCustomMonthlySavings)
-                                  ? Icons.radio_button_checked
-                                  : Icons.radio_button_off,
-                              size: 16,
-                              color: (!fireState.useCustomStartingCorpus && !fireState.useCustomMonthlySavings)
-                                  ? AppColors.gold
-                                  : AppColors.textMuted,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Auto-Sync Active Portfolio',
-                                style: GoogleFonts.inter(
-                                  fontSize: 12,
-                                  fontWeight: (!fireState.useCustomStartingCorpus && !fireState.useCustomMonthlySavings)
-                                      ? FontWeight.w700
-                                      : FontWeight.w500,
-                                  color: (!fireState.useCustomStartingCorpus && !fireState.useCustomMonthlySavings)
-                                      ? AppColors.textPrimary
-                                      : AppColors.textMuted,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isNarrow = constraints.maxWidth < 640;
+
+              final autoSyncCard = InkWell(
+                onTap: () {
+                  ref.read(fireProvider.notifier).setUseCustomStartingCorpus(false);
+                  ref.read(fireProvider.notifier).setUseCustomMonthlySavings(false);
+                },
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: (!fireState.useCustomStartingCorpus && !fireState.useCustomMonthlySavings)
+                        ? AppColors.surfaceCard
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                    border: (!fireState.useCustomStartingCorpus && !fireState.useCustomMonthlySavings)
+                        ? Border.all(color: AppColors.gold, width: 1.5)
+                        : null,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            (!fireState.useCustomStartingCorpus && !fireState.useCustomMonthlySavings)
+                                ? Icons.radio_button_checked
+                                : Icons.radio_button_off,
+                            size: 16,
+                            color: (!fireState.useCustomStartingCorpus && !fireState.useCustomMonthlySavings)
+                                ? AppColors.gold
+                                : AppColors.textMuted,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Auto-Sync Active Portfolio',
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                fontWeight: (!fireState.useCustomStartingCorpus && !fireState.useCustomMonthlySavings)
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                                color: (!fireState.useCustomStartingCorpus && !fireState.useCustomMonthlySavings)
+                                    ? AppColors.textPrimary
+                                    : AppColors.textMuted,
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 24),
-                          child: Text(
-                            '${CurrencyFormatter.formatCompact(currentNetWorth, currency: currency)} Net Worth • ${CurrencyFormatter.formatCompact(currentMonthlySavings, currency: currency)}/mo SIP',
-                            style: GoogleFonts.outfit(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: (!fireState.useCustomStartingCorpus && !fireState.useCustomMonthlySavings)
-                                  ? AppColors.goldLight
-                                  : AppColors.textMuted,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 24),
+                        child: Text(
+                          '${CurrencyFormatter.formatCompact(currentNetWorth, currency: currency)} Net Worth • ${CurrencyFormatter.formatCompact(currentMonthlySavings, currency: currency)}/mo SIP',
+                          style: GoogleFonts.outfit(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: (!fireState.useCustomStartingCorpus && !fireState.useCustomMonthlySavings)
+                                ? AppColors.goldLight
+                                : AppColors.textMuted,
+                          ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: InkWell(
-                  onTap: () {
-                    ref.read(fireProvider.notifier).setUseCustomStartingCorpus(true);
-                    ref.read(fireProvider.notifier).setUseCustomMonthlySavings(true);
-                  },
-                  borderRadius: BorderRadius.circular(8),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: (fireState.useCustomStartingCorpus || fireState.useCustomMonthlySavings)
-                          ? AppColors.surfaceCard
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(8),
-                      border: (fireState.useCustomStartingCorpus || fireState.useCustomMonthlySavings)
-                          ? Border.all(color: AppColors.gold, width: 1.5)
-                          : null,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              (fireState.useCustomStartingCorpus || fireState.useCustomMonthlySavings)
-                                  ? Icons.radio_button_checked
-                                  : Icons.radio_button_off,
-                              size: 16,
-                              color: (fireState.useCustomStartingCorpus || fireState.useCustomMonthlySavings)
-                                  ? AppColors.gold
-                                  : AppColors.textMuted,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Custom Starting Corpus & SIP',
+              );
+
+              final customCard = InkWell(
+                onTap: () {
+                  ref.read(fireProvider.notifier).setUseCustomStartingCorpus(true);
+                  ref.read(fireProvider.notifier).setUseCustomMonthlySavings(true);
+                },
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: (fireState.useCustomStartingCorpus || fireState.useCustomMonthlySavings)
+                        ? AppColors.surfaceCard
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                    border: (fireState.useCustomStartingCorpus || fireState.useCustomMonthlySavings)
+                        ? Border.all(color: AppColors.gold, width: 1.5)
+                        : null,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 6,
+                        runSpacing: 4,
+                        children: [
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                (fireState.useCustomStartingCorpus || fireState.useCustomMonthlySavings)
+                                    ? Icons.radio_button_checked
+                                    : Icons.radio_button_off,
+                                size: 16,
+                                color: (fireState.useCustomStartingCorpus || fireState.useCustomMonthlySavings)
+                                    ? AppColors.gold
+                                    : AppColors.textMuted,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Custom Corpus & SIP',
                                 style: GoogleFonts.inter(
                                   fontSize: 12,
                                   fontWeight: (fireState.useCustomStartingCorpus || fireState.useCustomMonthlySavings)
@@ -548,85 +565,106 @@ class _FireCalculatorCardState extends ConsumerState<FireCalculatorCard> {
                                       ? AppColors.textPrimary
                                       : AppColors.textMuted,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                            CompactAmountLabel(
-                              controller: _customCorpusController,
-                              currency: currency,
-                              prefix: 'Corpus: ',
-                              accentColor: AppColors.goldLight,
-                            ),
-                            const SizedBox(width: 4),
-                            CompactAmountLabel(
-                              controller: _customSavingsController,
-                              currency: currency,
-                              prefix: 'SIP: ',
-                              accentColor: AppColors.goldLight,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: SizedBox(
-                                height: 34,
-                                child: TextField(
-                                  controller: _customCorpusController,
-                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                  style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.goldLight),
-                                  decoration: InputDecoration(
-                                    prefixText: '${currency.symbol} ',
-                                    hintText: 'Corpus',
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                                    filled: true,
-                                    fillColor: AppColors.surfaceLight,
-                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: AppColors.border)),
-                                  ),
-                                  onChanged: (val) {
-                                    final parsed = double.tryParse(val.replaceAll(',', '').trim());
-                                    if (parsed != null && parsed >= 0) {
-                                      ref.read(fireProvider.notifier).setCustomStartingCorpus(parsed);
-                                    }
-                                  },
+                            ],
+                          ),
+                          Wrap(
+                            spacing: 4,
+                            children: [
+                              CompactAmountLabel(
+                                controller: _customCorpusController,
+                                currency: currency,
+                                prefix: 'Corpus: ',
+                                accentColor: AppColors.goldLight,
+                              ),
+                              CompactAmountLabel(
+                                controller: _customSavingsController,
+                                currency: currency,
+                                prefix: 'SIP: ',
+                                accentColor: AppColors.goldLight,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: SizedBox(
+                              height: 34,
+                              child: TextField(
+                                controller: _customCorpusController,
+                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.goldLight),
+                                decoration: InputDecoration(
+                                  prefixText: '${currency.symbol} ',
+                                  hintText: 'Corpus',
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                  filled: true,
+                                  fillColor: AppColors.surfaceLight,
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: AppColors.border)),
                                 ),
+                                onChanged: (val) {
+                                  final parsed = double.tryParse(val.replaceAll(',', '').trim());
+                                  if (parsed != null && parsed >= 0) {
+                                    ref.read(fireProvider.notifier).setCustomStartingCorpus(parsed);
+                                  }
+                                },
                               ),
                             ),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: SizedBox(
-                                height: 34,
-                                child: TextField(
-                                  controller: _customSavingsController,
-                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                  style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.goldLight),
-                                  decoration: InputDecoration(
-                                    prefixText: '${currency.symbol} ',
-                                    hintText: 'SIP/mo',
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                                    filled: true,
-                                    fillColor: AppColors.surfaceLight,
-                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: AppColors.border)),
-                                  ),
-                                  onChanged: (val) {
-                                    final parsed = double.tryParse(val.replaceAll(',', '').trim());
-                                    if (parsed != null && parsed >= 0) {
-                                      ref.read(fireProvider.notifier).setCustomMonthlySavings(parsed);
-                                    }
-                                  },
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: SizedBox(
+                              height: 34,
+                              child: TextField(
+                                controller: _customSavingsController,
+                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.goldLight),
+                                decoration: InputDecoration(
+                                  prefixText: '${currency.symbol} ',
+                                  hintText: 'SIP/mo',
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                  filled: true,
+                                  fillColor: AppColors.surfaceLight,
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: AppColors.border)),
                                 ),
+                                onChanged: (val) {
+                                  final parsed = double.tryParse(val.replaceAll(',', '').trim());
+                                  if (parsed != null && parsed >= 0) {
+                                    ref.read(fireProvider.notifier).setCustomMonthlySavings(parsed);
+                                  }
+                                },
                               ),
                             ),
-                          ],
-                        ),
-                      ],
-                    ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-              ),
-            ],
+              );
+
+              if (isNarrow) {
+                return Column(
+                  children: [
+                    autoSyncCard,
+                    const SizedBox(height: 10),
+                    customCard,
+                  ],
+                );
+              }
+
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: autoSyncCard),
+                  const SizedBox(width: 10),
+                  Expanded(child: customCard),
+                ],
+              );
+            },
           ),
         ),
         const SizedBox(height: 16),
@@ -815,79 +853,80 @@ class _FireCalculatorCardState extends ConsumerState<FireCalculatorCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 10,
+            runSpacing: 8,
             children: [
-              Expanded(
-                child: InkWell(
-                  onTap: () => setState(() => _isMilestonesExpanded = !_isMilestonesExpanded),
-                  borderRadius: BorderRadius.circular(8),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: AppColors.gold.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(Icons.flag_rounded, size: 16, color: AppColors.gold),
+              InkWell(
+                onTap: () => setState(() => _isMilestonesExpanded = !_isMilestonesExpanded),
+                borderRadius: BorderRadius.circular(8),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: AppColors.gold.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      const SizedBox(width: 10),
-                      Flexible(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Flexible(
-                                  child: Text(
-                                    'PRE-RETIREMENT GOALS & CAPITAL OUTFLOWS',
-                                    style: AppTypography.heading3.copyWith(fontSize: 13),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
-                                  decoration: BoxDecoration(
+                      child: const Icon(Icons.flag_rounded, size: 16, color: AppColors.gold),
+                    ),
+                    const SizedBox(width: 10),
+                    Flexible(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 4,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              Text(
+                                'PRE-RETIREMENT GOALS',
+                                style: AppTypography.heading3.copyWith(fontSize: 13),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                decoration: BoxDecoration(
+                                  color: activeMilestones.isNotEmpty
+                                      ? AppColors.gold.withOpacity(0.15)
+                                      : AppColors.surfaceLight,
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
                                     color: activeMilestones.isNotEmpty
-                                        ? AppColors.gold.withOpacity(0.15)
-                                        : AppColors.surfaceLight,
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(
-                                      color: activeMilestones.isNotEmpty
-                                          ? AppColors.gold.withOpacity(0.4)
-                                          : AppColors.border,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    '${activeMilestones.length} Active',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w700,
-                                      color: activeMilestones.isNotEmpty ? AppColors.goldLight : AppColors.textMuted,
-                                    ),
+                                        ? AppColors.gold.withOpacity(0.4)
+                                        : AppColors.border,
                                   ),
                                 ),
-                              ],
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              'Major one-off expenses (Home purchase, Child Education) deducted from your net worth before FIRE.',
-                              style: AppTypography.bodySmall.copyWith(fontSize: 11),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
+                                child: Text(
+                                  '${activeMilestones.length} Active',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    color: activeMilestones.isNotEmpty ? AppColors.goldLight : AppColors.textMuted,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Major one-off expenses deducted from your net worth before FIRE.',
+                            style: AppTypography.bodySmall.copyWith(fontSize: 11),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
                 children: [
                   OutlinedButton.icon(
                     style: OutlinedButton.styleFrom(
@@ -916,7 +955,6 @@ class _FireCalculatorCardState extends ConsumerState<FireCalculatorCard> {
                       }
                     },
                   ),
-                  const SizedBox(width: 8),
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.gold,
@@ -935,7 +973,6 @@ class _FireCalculatorCardState extends ConsumerState<FireCalculatorCard> {
                       targetRetirementAge: projState.targetRetirementAge,
                     ),
                   ),
-                  const SizedBox(width: 4),
                   IconButton(
                     icon: Icon(
                       _isMilestonesExpanded ? Icons.expand_less_rounded : Icons.expand_more_rounded,
@@ -1482,20 +1519,32 @@ class _FireCalculatorCardState extends ConsumerState<FireCalculatorCard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 12,
+          runSpacing: 8,
           children: [
             Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text('NET WORTH VS FIRE TARGET CROSSOVER', style: AppTypography.heading3.copyWith(fontSize: 14)),
+                Flexible(
+                  child: Text(
+                    'NET WORTH VS FIRE TARGET CROSSOVER',
+                    style: AppTypography.heading3.copyWith(fontSize: 14),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
                 const SizedBox(width: 6),
                 _buildTooltipIcon('Visualizes your projected Net Worth growth curve crossing over the inflation-adjusted FIRE Target Line. When Net Worth climbs above the line, Financial Independence is unlocked.'),
               ],
             ),
-            Row(
+            Wrap(
+              spacing: 12,
+              runSpacing: 6,
               children: [
                 _buildLegendIndicator(AppColors.profit, 'Projected Net Worth'),
-                const SizedBox(width: 12),
                 _buildLegendIndicator(AppColors.crimsonLight, 'Inflation-Adjusted FIRE Target'),
               ],
             ),
@@ -1667,8 +1716,11 @@ class _FireCalculatorCardState extends ConsumerState<FireCalculatorCard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 12,
+          runSpacing: 4,
           children: [
             Text('YEAR-BY-YEAR FIRE TIMELINE SCHEDULE', style: AppTypography.heading3.copyWith(fontSize: 14)),
             TextButton.icon(
@@ -1820,10 +1872,18 @@ class _FireCalculatorCardState extends ConsumerState<FireCalculatorCard> {
 
   Widget _buildLegendIndicator(Color color, String label) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
         const SizedBox(width: 4),
-        Text(label, style: GoogleFonts.inter(fontSize: 10, color: AppColors.textSecondary)),
+        Flexible(
+          child: Text(
+            label,
+            style: GoogleFonts.inter(fontSize: 10, color: AppColors.textSecondary),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
       ],
     );
   }

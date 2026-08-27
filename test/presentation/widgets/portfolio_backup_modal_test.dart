@@ -8,11 +8,11 @@ import '../../data/portfolio_repository_impl_test.dart';
 
 void main() {
   group('PortfolioBackupModal Widget Tests (Given - When - Then - Verify)', () {
-    Widget buildTestWidget() {
-      final mockDs = MockLocalDataSource();
+    Widget buildTestWidget({MockLocalDataSource? mockDs}) {
+      final ds = mockDs ?? MockLocalDataSource();
       return ProviderScope(
         overrides: [
-          localDataSourceProvider.overrideWithValue(mockDs),
+          localDataSourceProvider.overrideWithValue(ds),
         ],
         child: MaterialApp(
           home: Scaffold(
@@ -32,44 +32,61 @@ void main() {
       );
     }
 
-    testWidgets('Given PortfolioBackupModal, When opened, Then displays preset buttons, JSON export/import and clear all actions', (tester) async {
+    testWidgets('Given PortfolioBackupModal, When loading Balanced and Aggressive presets, Then loads assets into portfolio', (tester) async {
       tester.view.physicalSize = const Size(1200, 900);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() => tester.view.resetPhysicalSize());
 
-      // Given & When
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();
       await tester.tap(find.text('Open Backup Modal'));
       await tester.pumpAndSettle();
 
-      // Then & Verify
-      expect(find.text('Presets & Backup Management'), findsOneWidget);
-      expect(find.text('Balanced Starter'), findsOneWidget);
-      expect(find.text('Aggressive Tech'), findsOneWidget);
-      expect(find.text('Copy Portfolio JSON to Clipboard'), findsOneWidget);
-      expect(find.text('Restore Portfolio from JSON'), findsOneWidget);
-      expect(find.text('Clear All'), findsOneWidget);
+      // Tap Balanced Starter
+      await tester.tap(find.text('Balanced Starter'));
+      await tester.pumpAndSettle();
+      expect(find.text('Loaded Balanced Starter Portfolio!'), findsOneWidget);
+
+      // Tap Aggressive Tech
+      await tester.tap(find.text('Aggressive Tech'));
+      await tester.pumpAndSettle();
+      expect(find.text('Loaded Aggressive Growth Portfolio!'), findsOneWidget);
+
+      // Copy JSON to clipboard
+      await tester.tap(find.text('Copy Portfolio JSON to Clipboard'));
+      await tester.pumpAndSettle();
+      expect(find.text('Portfolio JSON copied to clipboard!'), findsOneWidget);
+
+      // Clear All
+      await tester.tap(find.text('Clear All'));
+      await tester.pumpAndSettle();
+      expect(find.byType(PortfolioBackupModal), findsNothing);
+      await tester.pump(const Duration(seconds: 4));
     });
 
-    testWidgets('Given PortfolioBackupModal, When invalid JSON is pasted and restored, Then displays error status message', (tester) async {
+    testWidgets('Given PortfolioBackupModal, When valid and invalid JSON is restored, Then updates state appropriately', (tester) async {
       tester.view.physicalSize = const Size(1200, 900);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() => tester.view.resetPhysicalSize());
 
-      // Given
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();
       await tester.tap(find.text('Open Backup Modal'));
       await tester.pumpAndSettle();
 
-      // When: Enter invalid JSON
+      // Invalid JSON
       await tester.enterText(find.byType(TextField), 'invalid json string');
       await tester.tap(find.text('Restore Portfolio from JSON'));
       await tester.pumpAndSettle();
-
-      // Then & Verify
       expect(find.text('Invalid JSON structure.'), findsOneWidget);
+
+      // Valid JSON
+      const validJson = '[{"id":"1","name":"Test Stock","category":"equities","type":"oneTime","investedAmount":1000.0,"currentValue":1200.0,"expectedCAGR":12.0,"stepUpRate":0.0,"startDate":"2025-01-01T00:00:00.000","isIncluded":true}]';
+      await tester.enterText(find.byType(TextField), validJson);
+      await tester.tap(find.text('Restore Portfolio from JSON'));
+      await tester.pumpAndSettle();
+      expect(find.text('Portfolio successfully imported!'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 4));
     });
   });
 }

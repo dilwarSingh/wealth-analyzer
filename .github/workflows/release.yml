@@ -52,7 +52,7 @@ jobs:
         run: flutter test
 
   build-windows:
-    name: Build Windows Desktop
+    name: Build Windows (Setup EXE)
     needs: lint-and-test
     runs-on: windows-latest
     steps:
@@ -68,29 +68,56 @@ jobs:
       - name: Enable Windows Desktop Support
         run: flutter config --enable-windows-desktop
 
+      - name: Install Inno Setup
+        run: choco install innosetup -y --no-progress
+
       - name: Install Dependencies
         run: flutter pub get
 
       - name: Build Windows Release
         run: flutter build windows --release
 
-      - name: Package Windows Artifact
+      - name: Package Windows Installer
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path dist
-          Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath dist\wealth-analyzer-windows-x64.zip
 
-      - name: Upload Windows Artifact
+          # Extract version from pubspec.yaml or git ref
+          $versionLine = Get-Content pubspec.yaml | Where-Object { $_ -match '^version:\s*(.+)' }
+          $rawVersion = ($versionLine -replace '^version:\s*', '').Trim()
+          $cleanVersion = ($rawVersion -split '\+')[0]
+          if ($env:GITHUB_REF_TYPE -eq 'tag') {
+            $cleanVersion = $env:GITHUB_REF_NAME.TrimStart('v')
+          }
+          Write-Host "Packaging Windows release version: $cleanVersion"
+
+          # Compile Inno Setup Installer (.exe)
+          $isccPath = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $isccPath)) {
+            $isccPath = (Get-Command iscc.exe -ErrorAction SilentlyContinue).Source
+          }
+          Write-Host "Using ISCC at: $isccPath"
+          & "$isccPath" /DMyAppVersion="$cleanVersion" packaging\windows\inno_setup.iss
+
+      - name: Upload Windows Setup Installer
         uses: actions/upload-artifact@v4
         with:
-          name: wealth-analyzer-windows-x64
-          path: dist/wealth-analyzer-windows-x64.zip
+          name: wealth-analyzer-windows-installer-x64
+          path: dist/wealth-analyzer-windows-installer-x64.exe
           if-no-files-found: error
 
   build-linux:
-    name: Build Linux Desktop
+    name: Build Linux DEB (${{ matrix.os_name }})
     needs: lint-and-test
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-22.04
+            os_name: ubuntu-22.04
+          - runner: ubuntu-24.04
+            os_name: ubuntu-24.04
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -98,7 +125,7 @@ jobs:
       - name: Install Linux Build Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -115,20 +142,68 @@ jobs:
       - name: Build Linux Release
         run: flutter build linux --release
 
-      - name: Package Linux Artifact
+      - name: Package Linux DEB
         run: |
           mkdir -p dist
-          tar -czf dist/wealth-analyzer-linux-x64.tar.gz -C build/linux/x64/release/bundle .
 
-      - name: Upload Linux Artifact
+          # Extract version from pubspec.yaml or git tag
+          RAW_VERSION=$(grep '^version: ' pubspec.yaml | sed 's/version: //' | tr -d ' "\r\n')
+          CLEAN_VERSION=$(echo "$RAW_VERSION" | cut -d'+' -f1)
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            CLEAN_VERSION="${GITHUB_REF_NAME#v}"
+          fi
+          echo "Packaging Linux release version: $CLEAN_VERSION for ${{ matrix.os_name }}"
+
+          # Assemble Debian package structure
+          DEB_DIR="deb_package"
+          rm -rf "$DEB_DIR"
+          mkdir -p "$DEB_DIR/DEBIAN"
+          mkdir -p "$DEB_DIR/usr/bin"
+          mkdir -p "$DEB_DIR/usr/lib/wealth_projector"
+          mkdir -p "$DEB_DIR/usr/share/applications"
+          mkdir -p "$DEB_DIR/usr/share/icons/hicolor/512x512/apps"
+
+          # Copy application bundle
+          cp -r build/linux/x64/release/bundle/* "$DEB_DIR/usr/lib/wealth_projector/"
+
+          # Create executable wrapper in /usr/bin
+          cat << 'EOF' > "$DEB_DIR/usr/bin/wealth_projector"
+          #!/bin/bash
+          exec /usr/lib/wealth_projector/wealth_projector "$@"
+          EOF
+          chmod +x "$DEB_DIR/usr/bin/wealth_projector"
+
+          # Copy desktop entry and icon
+          cp packaging/linux/wealth_projector.desktop "$DEB_DIR/usr/share/applications/"
+          cp macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_512.png "$DEB_DIR/usr/share/icons/hicolor/512x512/apps/wealth_projector.png"
+
+          # Generate DEBIAN/control
+          cat << EOF > "$DEB_DIR/DEBIAN/control"
+          Package: wealth-analyzer
+          Version: ${CLEAN_VERSION}
+          Section: utils
+          Priority: optional
+          Architecture: amd64
+          Maintainer: Wealth Analyzer Team <support@wealthanalyzer.app>
+          Depends: libc6, libgtk-3-0, liblzma5, libstdc++6
+          Description: Wealth Analyzer - Institutional-Grade Financial Simulator (${{ matrix.os_name }})
+           Wealth Analyzer provides interactive FIRE calculations, Monte Carlo stochastic modeling,
+           and Systematic Withdrawal Planning (SWP) decumulation forecasting.
+          EOF
+
+          # Build Debian package
+          chmod -R 755 "$DEB_DIR"
+          dpkg-deb --build --root-owner-group "$DEB_DIR" "dist/wealth-analyzer-${{ matrix.os_name }}-amd64.deb"
+
+      - name: Upload Linux DEB Package
         uses: actions/upload-artifact@v4
         with:
-          name: wealth-analyzer-linux-x64
-          path: dist/wealth-analyzer-linux-x64.tar.gz
+          name: wealth-analyzer-${{ matrix.os_name }}-amd64-deb
+          path: dist/wealth-analyzer-${{ matrix.os_name }}-amd64.deb
           if-no-files-found: error
 
   build-macos:
-    name: Build macOS Desktop
+    name: Build macOS (DMG)
     needs: lint-and-test
     runs-on: macos-latest
     steps:
@@ -144,23 +219,42 @@ jobs:
       - name: Enable macOS Desktop Support
         run: flutter config --enable-macos-desktop
 
+      - name: Install create-dmg
+        run: brew install create-dmg || true
+
       - name: Install Dependencies
         run: flutter pub get
 
       - name: Build macOS Release
         run: flutter build macos --release
 
-      - name: Package macOS Artifact
+      - name: Package macOS DMG Installer
         run: |
           mkdir -p dist
-          cd build/macos/Build/Products/Release
-          zip -r -y "${GITHUB_WORKSPACE}/dist/wealth-analyzer-macos.zip" wealth_projector.app
 
-      - name: Upload macOS Artifact
+          APP_PATH="build/macos/Build/Products/Release/wealth_projector.app"
+
+          if command -v create-dmg &> /dev/null; then
+            create-dmg \
+              --volname "Wealth Analyzer" \
+              --window-pos 200 120 \
+              --window-size 600 400 \
+              --icon-size 100 \
+              --icon "wealth_projector.app" 175 190 \
+              --hide-extension "wealth_projector.app" \
+              --app-drop-link 425 190 \
+              "dist/wealth-analyzer-macos.dmg" \
+              "$APP_PATH" || \
+            hdiutil create -volname "Wealth Analyzer" -srcfolder "$APP_PATH" -ov -format UDZO dist/wealth-analyzer-macos.dmg
+          else
+            hdiutil create -volname "Wealth Analyzer" -srcfolder "$APP_PATH" -ov -format UDZO dist/wealth-analyzer-macos.dmg
+          fi
+
+      - name: Upload macOS DMG Installer
         uses: actions/upload-artifact@v4
         with:
-          name: wealth-analyzer-macos
-          path: dist/wealth-analyzer-macos.zip
+          name: wealth-analyzer-macos-dmg
+          path: dist/wealth-analyzer-macos.dmg
           if-no-files-found: error
 
   build-web:
@@ -239,7 +333,8 @@ jobs:
           prerelease: ${{ github.event.inputs.prerelease || false }}
           generate_release_notes: true
           files: |
-            release-artifacts/wealth-analyzer-windows-x64.zip
-            release-artifacts/wealth-analyzer-linux-x64.tar.gz
-            release-artifacts/wealth-analyzer-macos.zip
+            release-artifacts/wealth-analyzer-windows-installer-x64.exe
+            release-artifacts/wealth-analyzer-ubuntu-22.04-amd64.deb
+            release-artifacts/wealth-analyzer-ubuntu-24.04-amd64.deb
+            release-artifacts/wealth-analyzer-macos.dmg
             release-artifacts/wealth-analyzer-web.zip

@@ -68,86 +68,94 @@ class _CustomFinancialSliderState extends State<CustomFinancialSlider> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 6,
+            runSpacing: 4,
             children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    if (widget.icon != null) ...[
-                      Icon(widget.icon, size: 16, color: widget.activeColor),
-                      const SizedBox(width: 6),
-                    ],
-                    Flexible(
-                      child: Text(
-                        widget.label,
-                        style: AppTypography.bodyMedium.copyWith(
-                          color: AppColors.textPrimary,
-                          fontWeight: FontWeight.w500,
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (widget.icon != null) ...[
+                    Icon(widget.icon, size: 16, color: widget.activeColor),
+                    const SizedBox(width: 6),
+                  ],
+                  Flexible(
+                    child: Text(
+                      widget.label,
+                      style: AppTypography.bodyMedium.copyWith(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (widget.tooltipMessage != null) ...[
+                    const SizedBox(width: 5),
+                    Tooltip(
+                      message: widget.tooltipMessage!,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      margin: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E293B),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: widget.activeColor.withOpacity(0.4), width: 1),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.5),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      textStyle: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white,
+                        height: 1.35,
+                      ),
+                      preferBelow: false,
+                      verticalOffset: 12,
+                      waitDuration: const Duration(milliseconds: 150),
+                      showDuration: const Duration(seconds: 5),
+                      child: MouseRegion(
+                        cursor: SystemMouseCursors.help,
+                        child: Icon(
+                          Icons.info_outline_rounded,
+                          size: 13,
+                          color: AppColors.textMuted.withOpacity(0.9),
                         ),
-                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    if (widget.tooltipMessage != null) ...[
-                      const SizedBox(width: 5),
-                      Tooltip(
-                        message: widget.tooltipMessage!,
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        margin: const EdgeInsets.symmetric(horizontal: 16),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1E293B),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: widget.activeColor.withOpacity(0.4), width: 1),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.5),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        textStyle: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.white,
-                          height: 1.35,
-                        ),
-                        preferBelow: false,
-                        verticalOffset: 12,
-                        waitDuration: const Duration(milliseconds: 150),
-                        showDuration: const Duration(seconds: 5),
-                        child: MouseRegion(
-                          cursor: SystemMouseCursors.help,
-                          child: Icon(
-                            Icons.info_outline_rounded,
-                            size: 13,
-                            color: AppColors.textMuted.withOpacity(0.9),
-                          ),
-                        ),
-                      ),
-                    ],
                   ],
-                ),
+                ],
               ),
-              if (widget.headerAction != null) ...[
-                const SizedBox(width: 8),
-                widget.headerAction!,
-              ],
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: widget.activeColor.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: widget.activeColor.withOpacity(0.4)),
-                ),
-                child: Text(
-                  display,
-                  style: AppTypography.bodyMedium.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: widget.activeColor == AppColors.gold ? AppColors.goldLight : widget.activeColor,
+              Wrap(
+                alignment: WrapAlignment.end,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 6,
+                runSpacing: 4,
+                children: [
+                  if (widget.headerAction != null) widget.headerAction!,
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: widget.activeColor.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: widget.activeColor.withOpacity(0.4)),
+                    ),
+                    child: Text(
+                      display,
+                      style: AppTypography.label.copyWith(
+                        color: widget.activeColor,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
             ],
           ),

@@ -111,5 +111,25 @@ void main() {
 
       expect(find.text('Corpus: 1.5 M'), findsOneWidget);
     });
+
+    testWidgets('Given CompactAmountSuffixBadge, When rendered, Then wraps CompactAmountLabel in padding with accentColor', (tester) async {
+      final controller = TextEditingController(text: '200000');
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: CompactAmountSuffixBadge(
+              controller: controller,
+              currency: CurrencyType.inr,
+              accentColor: Colors.teal,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CompactAmountSuffixBadge), findsOneWidget);
+      expect(find.text('≈ 2 L'), findsOneWidget);
+    });
   });
 }

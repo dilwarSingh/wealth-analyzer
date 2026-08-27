@@ -36,8 +36,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Then & Verify
-      expect(find.text('HOLDINGS & ASSET ALLOCATION'), findsOneWidget);
-      expect(find.text('0 / 0 Active in Calculations'), findsOneWidget);
+      expect(find.text('HOLDINGS & ASSETS'), findsOneWidget);
+      expect(find.text('0 / 0 Active'), findsOneWidget);
       expect(find.text('No investment holdings found. Click "+ Add Investment" to add your first asset.'), findsOneWidget);
     });
 
@@ -71,7 +71,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Then & Verify
-      expect(find.text('1 / 1 Active in Calculations'), findsOneWidget);
+      expect(find.text('1 / 1 Active'), findsOneWidget);
       expect(find.text('Infosys Tech Equity'), findsOneWidget);
       expect(find.text('Stocks/Equities'), findsOneWidget);
 
@@ -85,14 +85,14 @@ void main() {
 
       // Verify asset is excluded
       expect(container.read(portfolioProvider).assets.first.isIncluded, isFalse);
-      expect(find.text('0 / 1 Active in Calculations'), findsOneWidget);
+      expect(find.text('0 / 1 Active'), findsOneWidget);
       expect(find.textContaining('All holdings are currently unchecked'), findsOneWidget);
 
       // Tap Check All button in banner
       await tester.tap(find.text('Check All'));
       await tester.pumpAndSettle();
       expect(container.read(portfolioProvider).assets.first.isIncluded, isTrue);
-      expect(find.text('1 / 1 Active in Calculations'), findsOneWidget);
+      expect(find.text('1 / 1 Active'), findsOneWidget);
     });
   });
 }

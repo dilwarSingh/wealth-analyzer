@@ -30,26 +30,27 @@ class NetWorthAreaChart extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header & Timeframe Switcher
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 10,
+            runSpacing: 8,
             children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    const Icon(Icons.show_chart_rounded, size: 20, color: AppColors.gold),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Text(
-                        'NET WORTH TRAJECTORY',
-                        style: AppTypography.heading3.copyWith(fontSize: 16),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.show_chart_rounded, size: 20, color: AppColors.gold),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      'NET WORTH TRAJECTORY',
+                      style: AppTypography.heading3.copyWith(fontSize: 16),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 10),
               // Timeframe Buttons
               Container(
                 decoration: BoxDecoration(
@@ -57,30 +58,33 @@ class NetWorthAreaChart extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: AppColors.border),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: ChartTimeframe.values.map((tf) {
-                    final isSelected = projState.selectedTimeframe == tf;
-                    return InkWell(
-                      onTap: () => ref.read(projectionProvider.notifier).setTimeframe(tf),
-                      borderRadius: BorderRadius.circular(8),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: isSelected ? AppColors.gold : Colors.transparent,
-                          borderRadius: BorderRadius.circular(7),
-                        ),
-                        child: Text(
-                          tf.label,
-                          style: GoogleFonts.inter(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: isSelected ? Colors.black : AppColors.textSecondary,
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: ChartTimeframe.values.map((tf) {
+                      final isSelected = projState.selectedTimeframe == tf;
+                      return InkWell(
+                        onTap: () => ref.read(projectionProvider.notifier).setTimeframe(tf),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: isSelected ? AppColors.gold : Colors.transparent,
+                            borderRadius: BorderRadius.circular(7),
+                          ),
+                          child: Text(
+                            tf.label,
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: isSelected ? Colors.black : AppColors.textSecondary,
+                            ),
                           ),
                         ),
-                      ),
-                    );
-                  }).toList(),
+                      );
+                    }).toList(),
+                  ),
                 ),
               ),
             ],
@@ -258,11 +262,12 @@ class NetWorthAreaChart extends ConsumerWidget {
           ],
           const SizedBox(height: 12),
           // Legend
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 16,
+            runSpacing: 6,
             children: [
               _buildLegendPill('Projected Net Worth', AppColors.gold, isSolid: true),
-              const SizedBox(width: 20),
               _buildLegendPill('Cumulative Capital Invested', AppColors.textSecondary, isSolid: false),
             ],
           ),

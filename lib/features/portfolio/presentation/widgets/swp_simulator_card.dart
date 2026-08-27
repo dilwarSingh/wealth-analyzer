@@ -72,45 +72,47 @@ class _SwpSimulatorCardState extends ConsumerState<SwpSimulatorCard> {
           LayoutBuilder(
             builder: (context, constraints) {
               final isWide = constraints.maxWidth >= 700;
-              return Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              return Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 12,
+                runSpacing: 8,
                 children: [
-                  Expanded(
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [AppColors.catMutualFunds, AppColors.catEquities],
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [AppColors.catMutualFunds, AppColors.catEquities],
+                          ),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.savings_rounded, color: Colors.white, size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      Flexible(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'SWP DECUMULATION SIMULATOR',
+                              style: AppTypography.heading3.copyWith(fontSize: 16),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(Icons.savings_rounded, color: Colors.white, size: 20),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Model retirement withdrawals, stochastic Monte Carlo trials, and crisis sequence risk.',
+                              style: AppTypography.bodySmall,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 12),
-                        Flexible(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'SWP DECUMULATION SIMULATOR',
-                                style: AppTypography.heading3.copyWith(fontSize: 16),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                'Model retirement withdrawals, stochastic Monte Carlo trials, and crisis sequence risk.',
-                                style: AppTypography.bodySmall,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                   if (isWide)
                     PopupMenuButton<double>(
@@ -2284,11 +2286,15 @@ class _SwpSimulatorCardState extends ConsumerState<SwpSimulatorCard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 10,
+          runSpacing: 6,
           children: [
             Text('RETIREMENT CORPUS TRAJECTORY', style: AppTypography.heading3.copyWith(fontSize: 14)),
             Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Container(width: 10, height: 10, decoration: const BoxDecoration(color: AppColors.gold, shape: BoxShape.circle)),
                 const SizedBox(width: 6),
@@ -2447,8 +2453,11 @@ class _SwpSimulatorCardState extends ConsumerState<SwpSimulatorCard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 10,
+          runSpacing: 4,
           children: [
             Text('YEAR-BY-YEAR SWP SCHEDULE', style: AppTypography.heading3.copyWith(fontSize: 14)),
             TextButton.icon(

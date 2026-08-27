@@ -26,55 +26,48 @@ class AssetListTable extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header
-          LayoutBuilder(
-            builder: (context, constraints) {
-              return Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 6,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Expanded(
-                    child: Row(
-                      children: [
-                        const Icon(Icons.account_balance_wallet_rounded, size: 20, color: AppColors.gold),
-                        const SizedBox(width: 8),
-                        Flexible(
-                          child: Text(
-                            'HOLDINGS & ASSET ALLOCATION',
-                            style: AppTypography.heading3.copyWith(fontSize: 16),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  const Icon(Icons.account_balance_wallet_rounded, size: 20, color: AppColors.gold),
                   const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: activeCount == assets.length
-                          ? AppColors.profit.withOpacity(0.12)
-                          : (activeCount > 0 ? AppColors.gold.withOpacity(0.12) : AppColors.loss.withOpacity(0.12)),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: activeCount == assets.length
-                            ? AppColors.profit.withOpacity(0.4)
-                            : (activeCount > 0 ? AppColors.gold.withOpacity(0.4) : AppColors.loss.withOpacity(0.4)),
-                      ),
-                    ),
-                    child: Text(
-                      '$activeCount / ${assets.length} Active in Calculations',
-                      style: GoogleFonts.inter(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: activeCount == assets.length
-                            ? AppColors.profitLight
-                            : (activeCount > 0 ? AppColors.goldLight : AppColors.lossLight),
-                      ),
-                    ),
+                  Text(
+                    'HOLDINGS & ASSETS',
+                    style: AppTypography.heading3.copyWith(fontSize: 16),
                   ),
                 ],
-              );
-            },
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: activeCount == assets.length
+                      ? AppColors.profit.withOpacity(0.12)
+                      : (activeCount > 0 ? AppColors.gold.withOpacity(0.12) : AppColors.loss.withOpacity(0.12)),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: activeCount == assets.length
+                        ? AppColors.profit.withOpacity(0.4)
+                        : (activeCount > 0 ? AppColors.gold.withOpacity(0.4) : AppColors.loss.withOpacity(0.4)),
+                  ),
+                ),
+                child: Text(
+                  '$activeCount / ${assets.length} Active',
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: activeCount == assets.length
+                        ? AppColors.profitLight
+                        : (activeCount > 0 ? AppColors.goldLight : AppColors.lossLight),
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 18),
           if (assets.isEmpty)
@@ -354,29 +347,36 @@ class AssetListTable extends ConsumerWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        Checkbox(
-                          value: isIncluded,
-                          activeColor: AppColors.gold,
-                          checkColor: AppColors.canvas,
-                          onChanged: (val) {
-                            ref.read(portfolioProvider.notifier).toggleAssetInclusion(asset.id, val ?? true);
-                          },
-                        ),
-                        Icon(asset.category.icon, size: 16, color: isIncluded ? asset.category.color : AppColors.textDisabled),
-                        const SizedBox(width: 8),
-                        Text(
-                          asset.name,
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: isIncluded ? AppColors.textPrimary : AppColors.textDisabled,
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Checkbox(
+                            value: isIncluded,
+                            activeColor: AppColors.gold,
+                            checkColor: AppColors.canvas,
+                            onChanged: (val) {
+                              ref.read(portfolioProvider.notifier).toggleAssetInclusion(asset.id, val ?? true);
+                            },
                           ),
-                        ),
-                      ],
+                          Icon(asset.category.icon, size: 16, color: isIncluded ? asset.category.color : AppColors.textDisabled),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              asset.name,
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: isIncluded ? AppColors.textPrimary : AppColors.textDisabled,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                     Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         IconButton(
                           icon: const Icon(Icons.edit_rounded, size: 16, color: AppColors.textSecondary),
@@ -396,8 +396,10 @@ class AssetListTable extends ConsumerWidget {
                   ],
                 ),
                 const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 6,
+                  alignment: WrapAlignment.spaceBetween,
                   children: [
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

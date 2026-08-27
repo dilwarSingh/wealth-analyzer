@@ -76,15 +76,6 @@ class _WealthDashboardScreenState extends ConsumerState<WealthDashboardScreen> {
                       selectedTabIndex: _selectedTabIndex,
                       onTabSelected: (index) => setState(() => _selectedTabIndex = index),
                     ),
-                    builder: (context, screenType) {
-                      if (screenType == ScreenType.desktop) {
-                        return DashboardDesktopView(selectedTabIndex: _selectedTabIndex);
-                      }
-                      return DashboardMobileView(
-                        selectedTabIndex: _selectedTabIndex,
-                        onTabSelected: (index) => setState(() => _selectedTabIndex = index),
-                      );
-                    },
                   ),
                 ),
               ],

@@ -36,10 +36,14 @@ class _DonutAllocationChartState extends ConsumerState<DonutAllocationChart> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 4,
             children: [
               Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   const Icon(Icons.pie_chart_outline_rounded, size: 20, color: AppColors.gold),
                   const SizedBox(width: 8),

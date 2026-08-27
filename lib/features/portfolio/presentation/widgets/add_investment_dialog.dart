@@ -122,27 +122,33 @@ class _AddInvestmentDialogState extends ConsumerState<AddInvestmentDialog> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: AppColors.crimson.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: AppColors.crimson.withOpacity(0.4)),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.crimson.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: AppColors.crimson.withOpacity(0.4)),
+                          ),
+                          child: Icon(
+                            isEditing ? Icons.edit_note_rounded : Icons.add_chart_rounded,
+                            color: AppColors.crimson,
+                            size: 22,
+                          ),
                         ),
-                        child: Icon(
-                          isEditing ? Icons.edit_note_rounded : Icons.add_chart_rounded,
-                          color: AppColors.crimson,
-                          size: 22,
+                        const SizedBox(width: 12),
+                        Flexible(
+                          child: Text(
+                            isEditing ? 'Edit Investment' : 'Add New Investment',
+                            style: AppTypography.heading2.copyWith(fontSize: 18),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        isEditing ? 'Edit Investment' : 'Add New Investment',
-                        style: AppTypography.heading2.copyWith(fontSize: 18),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                   IconButton(
                     icon: const Icon(Icons.close_rounded, color: AppColors.textMuted),
@@ -453,14 +459,16 @@ class _AddInvestmentDialogState extends ConsumerState<AddInvestmentDialog> {
               const SizedBox(height: 12),
 
               // Modal Actions (Cancel & Save - Fixed at bottom)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+              Wrap(
+                alignment: WrapAlignment.end,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 12,
+                runSpacing: 8,
                 children: [
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),
                     child: Text('Cancel', style: AppTypography.buttonText.copyWith(color: AppColors.textSecondary)),
                   ),
-                  const SizedBox(width: 12),
                   CrimsonButton(
                     text: isEditing ? 'Save Changes' : 'Add Investment',
                     icon: isEditing ? Icons.check_rounded : Icons.add_rounded,
@@ -513,15 +521,20 @@ class _AddInvestmentDialogState extends ConsumerState<AddInvestmentDialog> {
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(icon, size: 15, color: isSelected ? Colors.white : AppColors.textSecondary),
             const SizedBox(width: 5),
-            Text(
-              label,
-              style: GoogleFonts.inter(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: isSelected ? Colors.white : AppColors.textSecondary,
+            Flexible(
+              child: Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: isSelected ? Colors.white : AppColors.textSecondary,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],

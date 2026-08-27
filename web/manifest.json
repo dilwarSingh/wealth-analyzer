@@ -1,11 +1,11 @@
 {
-    "name": "wealth_projector",
-    "short_name": "wealth_projector",
+    "name": "Wealth Analyzer",
+    "short_name": "Wealth Analyzer",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#0B0F19",
+    "theme_color": "#0B0F19",
+    "description": "Institutional-grade portfolio projection, systematic withdrawal planning (SWP), and stochastic risk modeling.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

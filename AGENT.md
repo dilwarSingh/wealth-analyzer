@@ -6,7 +6,7 @@ Welcome to the **Wealth Analyzer** codebase. This document serves as the primary
 
 ## 1. Project Overview & Mission
 
-- **Application Name**: Wealth Analyzer (Wealth Projector)
+- **Application Name**: Wealth Analyzer
 - **Target Audience**: Retail investors, wealth planners, and FIRE (Financial Independence, Retire Early) practitioners.
 - **Core Value Proposition**: Provides institutional-grade wealth projection, decumulation planning (SWP), 1,000-trial Monte Carlo stochastic modeling, and historical crisis stress-testing (Sequence-of-Returns Risk).
 - **Design Aesthetic**: Sleek Dark Mode Glassmorphism (`BackdropFilter` blur), Crimson Red (`#EF4444`) CTAs, and Luxe Gold (`#F59E0B`) accents on a Deep Dark Slate (`#0B0F19`) canvas.
@@ -207,20 +207,20 @@ Applies historical shocks in early retirement years when the portfolio is most v
 
 ## 6. Verification & Runbook Commands
 
-Always execute the following commands before completing any changes:
+Always execute the following commands in order before completing any changes:
 
 ```bash
-# 1. Run all 115+ automated tests (100% pass required)
-flutter test
+# 1. Build Windows release binary (Ensure compilation succeeds first)
+flutter build windows
 
 # 2. Run static analysis
 flutter analyze
 
-# 3. Run natively on Windows (Primary Platform Target)
-flutter run -d windows
+# 3. Run all 141+ automated tests (100% pass required)
+flutter test
 
-# 4. Build Windows release binary
-flutter build windows
+# 4. Run natively on Windows (Primary Platform Target)
+flutter run -d windows
 ```
 
 ---
@@ -228,7 +228,7 @@ flutter build windows
 ## 7. Mandatory Rules & Guardrails for AI Agents
 
 1. **Windows Platform Primary Requirement**:
-   - **Always run and test the application on the Windows platform (`flutter run -d windows`, `flutter test`, `flutter build windows`) instead of Web.**
+   - **Always build, analyze, and test the application on the Windows platform (`flutter build windows`, `flutter analyze`, `flutter test`, `flutter run -d windows`) instead of Web.**
 2. **Real Data Integrity**:
    - Never inject synthetic buffers or artificial mock percentages into user data. Everything in Sankey, KPI cards, charts, and tables must be $100\%$ derived from actual assets and settings.
 3. **Maintain Clean Architecture Separation**:

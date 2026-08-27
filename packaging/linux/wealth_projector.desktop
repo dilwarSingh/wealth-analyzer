@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Wealth Analyzer
+Comment=Wealth projection, decumulation planning, Monte Carlo modeling & FIRE simulator
+Exec=wealth_projector
+Icon=wealth_projector
+Terminal=false
+Type=Application
+Categories=Finance;Office;Utility;
+Keywords=wealth;finance;calculator;fire;investment;
+StartupNotify=true
+StartupWMClass=wealth_projector

@@ -64,46 +64,48 @@ class AppHeader extends ConsumerWidget {
                       child: Icon(Icons.auto_graph_rounded, color: Colors.white, size: 20),
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      RichText(
-                        text: TextSpan(
-                          children: [
-                            TextSpan(
-                              text: 'WEALTH ',
-                              style: GoogleFonts.outfit(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.textPrimary,
-                                letterSpacing: 0.5,
+                  if (constraints.maxWidth >= 500) ...[
+                    const SizedBox(width: 10),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        RichText(
+                          text: TextSpan(
+                            children: [
+                              TextSpan(
+                                text: 'WEALTH ',
+                                style: GoogleFonts.outfit(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.textPrimary,
+                                  letterSpacing: 0.5,
+                                ),
                               ),
-                            ),
-                            TextSpan(
-                              text: 'ANALYZER',
-                              style: GoogleFonts.outfit(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.gold,
-                                letterSpacing: 0.5,
+                              TextSpan(
+                                text: 'ANALYZER',
+                                style: GoogleFonts.outfit(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.gold,
+                                  letterSpacing: 0.5,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                      Text(
-                        'PORTFOLIO MODELING',
-                        style: GoogleFonts.inter(
-                          fontSize: 8,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textMuted,
-                          letterSpacing: 1.0,
+                        Text(
+                          'PORTFOLIO MODELING',
+                          style: GoogleFonts.inter(
+                            fontSize: 8,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textMuted,
+                            letterSpacing: 1.0,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
 
@@ -144,13 +146,13 @@ class AppHeader extends ConsumerWidget {
                     _buildCurrencyChip(
                       ref,
                       CurrencyType.inr,
-                      '₹ INR',
+                      constraints.maxWidth >= 450 ? '₹ INR' : '₹',
                       isSelected: currency == CurrencyType.inr,
                     ),
                     _buildCurrencyChip(
                       ref,
                       CurrencyType.usd,
-                      '\$ USD',
+                      constraints.maxWidth >= 450 ? '\$ USD' : '\$',
                       isSelected: currency == CurrencyType.usd,
                     ),
                   ],
@@ -175,21 +177,22 @@ class AppHeader extends ConsumerWidget {
                 ),
               ),
 
-              const SizedBox(width: 8),
-
-              // Primary Crimson Red CTA
-              CrimsonButton(
-                text: constraints.maxWidth >= 680 ? '+ Add Investment' : '+ Add',
-                icon: Icons.add_rounded,
-                height: 34,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (ctx) => const AddInvestmentDialog(),
-                  );
-                },
-              ),
+              // Primary Crimson Red CTA (shown on tablet and desktop)
+              if (constraints.maxWidth >= 600) ...[
+                const SizedBox(width: 8),
+                CrimsonButton(
+                  text: constraints.maxWidth >= 680 ? '+ Add Investment' : '+ Add',
+                  icon: Icons.add_rounded,
+                  height: 34,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => const AddInvestmentDialog(),
+                    );
+                  },
+                ),
+              ],
             ],
           );
         },

@@ -3,14 +3,14 @@ import 'package:flutter/material.dart';
 enum ScreenType { mobile, tablet, desktop }
 
 class ResponsiveBuilder extends StatelessWidget {
-  final Widget Function(BuildContext context, ScreenType screenType) builder;
+  final Widget Function(BuildContext context, ScreenType screenType)? builder;
   final Widget? mobile;
   final Widget? tablet;
   final Widget? desktop;
 
   const ResponsiveBuilder({
     super.key,
-    required this.builder,
+    this.builder,
     this.mobile,
     this.tablet,
     this.desktop,
@@ -35,11 +35,11 @@ class ResponsiveBuilder extends StatelessWidget {
     final screenType = getScreenType(context);
     switch (screenType) {
       case ScreenType.desktop:
-        return desktop ?? builder(context, screenType);
+        return desktop ?? builder?.call(context, screenType) ?? const SizedBox.shrink();
       case ScreenType.tablet:
-        return tablet ?? mobile ?? builder(context, screenType);
+        return tablet ?? mobile ?? builder?.call(context, screenType) ?? const SizedBox.shrink();
       case ScreenType.mobile:
-        return mobile ?? builder(context, screenType);
+        return mobile ?? builder?.call(context, screenType) ?? const SizedBox.shrink();
     }
   }
 }

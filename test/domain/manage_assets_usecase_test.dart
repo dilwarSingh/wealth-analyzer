@@ -171,5 +171,16 @@ void main() {
       expect(assets.any((a) => a.category == AssetCategory.mutualFunds), isTrue);
       expect(assets.any((a) => a.category == AssetCategory.goldPrecious), isTrue);
     });
+
+    test('Given empty portfolio, When loadSamplePortfolio is called with aggressive preset, Then loads high growth tech and crypto assets', () async {
+      // When
+      await useCase.loadSamplePortfolio('aggressive');
+      final assets = await useCase.getAssets();
+
+      // Then & Verify
+      expect(assets.length, equals(4));
+      expect(assets.any((a) => a.category == AssetCategory.crypto), isTrue);
+      expect(assets.any((a) => a.category == AssetCategory.equities), isTrue);
+    });
   });
 }
