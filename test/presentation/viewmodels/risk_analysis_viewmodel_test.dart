@@ -86,6 +86,11 @@ void main() {
       expect(riskState.monteCarloResult.percentiles.isNotEmpty, isTrue);
       expect(riskState.monteCarloResult.successRatePercent, greaterThan(0.0));
       expect(riskState.crisisStressTestResult.yearlyPoints.isNotEmpty, isTrue);
+      expect(riskState.allCrisisStressTestResults.length, equals(CrisisScenario.values.length));
+      expect(riskState.allCrisisStressTestResults[CrisisScenario.gfc2008]?.yearlyPoints.isNotEmpty, isTrue);
+      expect(riskState.allCrisisStressTestResults[CrisisScenario.dotCom2000]?.yearlyPoints.isNotEmpty, isTrue);
+      expect(riskState.allCrisisStressTestResults[CrisisScenario.flashCrash2020]?.yearlyPoints.isNotEmpty, isTrue);
+      expect(riskState.allCrisisStressTestResults[CrisisScenario.stagflation]?.yearlyPoints.isNotEmpty, isTrue);
     });
 
     test('Given scenario switch to 2020 Flash Crash or Custom, When selected, Then updates stress-test results', () {
@@ -105,6 +110,12 @@ void main() {
 
       expect(container.read(riskAnalysisProvider).selectedCrisisScenario, equals(CrisisScenario.flashCrash2020));
       expect(container.read(riskAnalysisProvider).crisisStressTestResult.scenario, equals(CrisisScenario.flashCrash2020));
+
+      riskNotifier.setCustomCrashPercent(-45.0);
+      expect(container.read(riskAnalysisProvider).customCrashPercent, equals(-45.0));
+
+      riskNotifier.selectCrisisScenario(CrisisScenario.custom);
+      expect(container.read(riskAnalysisProvider).selectedCrisisScenario, equals(CrisisScenario.custom));
 
       riskNotifier.setVolatilityPercent(18.5);
       expect(container.read(riskAnalysisProvider).volatilityPercent, equals(18.5));

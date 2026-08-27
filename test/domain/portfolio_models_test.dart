@@ -17,6 +17,7 @@ void main() {
           id: 'asset-test-1',
           name: 'Nifty 50 Index',
           category: AssetCategory.mutualFunds,
+          subCategory: 'Equity: Flexi Cap',
           type: InvestmentType.monthlySip,
           investedAmount: 15000.0,
           currentValue: 45000.0,
@@ -35,6 +36,7 @@ void main() {
         expect(reconstructedEntity.id, equals(originalEntity.id));
         expect(reconstructedEntity.name, equals(originalEntity.name));
         expect(reconstructedEntity.category, equals(AssetCategory.mutualFunds));
+        expect(reconstructedEntity.subCategory, equals('Equity: Flexi Cap'));
         expect(reconstructedEntity.type, equals(InvestmentType.monthlySip));
         expect(reconstructedEntity.investedAmount, equals(15000.0));
         expect(reconstructedEntity.currentValue, equals(45000.0));
@@ -55,6 +57,7 @@ void main() {
         expect(fallbackEntity.id, isEmpty);
         expect(fallbackEntity.name, isEmpty);
         expect(fallbackEntity.category, equals(AssetCategory.other));
+        expect(fallbackEntity.subCategory, isNull);
         expect(fallbackEntity.type, equals(InvestmentType.oneTime));
         expect(fallbackEntity.investedAmount, equals(0.0));
         expect(fallbackEntity.currentValue, equals(0.0));

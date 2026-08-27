@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wealth_projector/features/portfolio/domain/entities/asset_category.dart';
+import 'package:wealth_projector/features/portfolio/domain/entities/asset_subcategories.dart';
 import 'package:wealth_projector/features/portfolio/domain/entities/investment_asset.dart';
 
 void main() {
@@ -144,6 +145,60 @@ void main() {
         expect(modified.name, equals(original.name));
         expect(modified.currentValue, equals(650000.0));
         expect(modified.expectedCAGR, equals(10.5));
+      });
+
+      test('Given asset with subCategory, When cloned with copyWith, Then preserves and updates subCategory', () {
+        final original = InvestmentAsset(
+          id: 'asset-sub',
+          name: 'Parag Parikh Flexi Cap',
+          category: AssetCategory.mutualFunds,
+          subCategory: 'Equity: Flexi Cap',
+          type: InvestmentType.monthlySip,
+          investedAmount: 10000.0,
+          currentValue: 15000.0,
+          startDate: DateTime(2025, 1, 1),
+          expectedCAGR: 14.0,
+        );
+
+        expect(original.subCategory, equals('Equity: Flexi Cap'));
+
+        final updated = original.copyWith(subCategory: 'Equity: Large & Mid Cap');
+        expect(updated.subCategory, equals('Equity: Large & Mid Cap'));
+        expect(updated.name, equals('Parag Parikh Flexi Cap'));
+      });
+    });
+
+    // -------------------------------------------------------------
+    // 4. AssetSubcategories Presets & Formatting
+    // -------------------------------------------------------------
+    group('AssetSubcategories', () {
+      test('Given various categories, When getPresetsForCategory is called, Then returns correct presets', () {
+        expect(AssetSubcategories.getPresetsForCategory(AssetCategory.equities), contains('Large Cap Bluechip'));
+        expect(AssetSubcategories.getPresetsForCategory(AssetCategory.realEstate), contains('Residential Flat / Apartment'));
+        expect(AssetSubcategories.getPresetsForCategory(AssetCategory.goldPrecious), contains('Physical Gold (Coins / Bars)'));
+        expect(AssetSubcategories.getPresetsForCategory(AssetCategory.fixedDeposit), contains('Bank Fixed Deposit (FD)'));
+        expect(AssetSubcategories.getPresetsForCategory(AssetCategory.cashSavings), contains('Savings Bank Account'));
+        expect(AssetSubcategories.getPresetsForCategory(AssetCategory.crypto), contains('Layer 1 (BTC, ETH, SOL)'));
+        expect(AssetSubcategories.getPresetsForCategory(AssetCategory.other), contains('Venture / Angel Investment'));
+      });
+
+      test('Given Mutual Fund selections, When formatMutualFundSubcategory is called, Then formats uniformly', () {
+        // Standard Level 1 + Level 2
+        expect(AssetSubcategories.formatMutualFundSubcategory('Equity', 'Flexi Cap'), equals('Equity: Flexi Cap'));
+
+        // Level 2 is null or empty
+        expect(AssetSubcategories.formatMutualFundSubcategory('Debt', null), equals('Debt'));
+        expect(AssetSubcategories.formatMutualFundSubcategory('Debt', ''), equals('Debt'));
+
+        // Group is Other
+        expect(AssetSubcategories.formatMutualFundSubcategory('Other', null, customText: 'Special Fund'), equals('Special Fund'));
+        expect(AssetSubcategories.formatMutualFundSubcategory('Other', null, customText: '   '), equals('Other'));
+        expect(AssetSubcategories.formatMutualFundSubcategory('Other', null), equals('Other'));
+
+        // SubSub is Other
+        expect(AssetSubcategories.formatMutualFundSubcategory('Equity', 'Other', customText: 'Custom Momentum'), equals('Equity: Custom Momentum'));
+        expect(AssetSubcategories.formatMutualFundSubcategory('Equity', 'Other', customText: '   '), equals('Equity: Other'));
+        expect(AssetSubcategories.formatMutualFundSubcategory('Equity', 'Other'), equals('Equity: Other'));
       });
     });
   });

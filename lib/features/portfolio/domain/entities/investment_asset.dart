@@ -22,6 +22,7 @@ class InvestmentAsset {
   final String id;
   final String name;
   final AssetCategory category;
+  final String? subCategory;
   final InvestmentType type;
   final double investedAmount;
   final double currentValue;
@@ -34,6 +35,7 @@ class InvestmentAsset {
     required this.id,
     required this.name,
     required this.category,
+    this.subCategory,
     required this.type,
     required this.investedAmount,
     required this.currentValue,
@@ -100,6 +102,7 @@ class InvestmentAsset {
     String? id,
     String? name,
     AssetCategory? category,
+    String? subCategory,
     InvestmentType? type,
     double? investedAmount,
     double? currentValue,
@@ -112,6 +115,7 @@ class InvestmentAsset {
       id: id ?? this.id,
       name: name ?? this.name,
       category: category ?? this.category,
+      subCategory: subCategory ?? this.subCategory,
       type: type ?? this.type,
       investedAmount: investedAmount ?? this.investedAmount,
       currentValue: currentValue ?? this.currentValue,

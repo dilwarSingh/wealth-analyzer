@@ -44,7 +44,7 @@ void main() {
     });
 
     testWidgets('Given active assets, When SwpSimulatorCard renders, Then displays sustainability banner, LineChart, and Schedule DataTable', (tester) async {
-      tester.view.physicalSize = const Size(1200, 1200);
+      tester.view.physicalSize = const Size(1400, 2000);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() => tester.view.resetPhysicalSize());
 
@@ -211,7 +211,7 @@ void main() {
       expect(find.text('BASELINE ENDING CORPUS'), findsOneWidget);
       expect(find.text('STRESSED ENDING CORPUS'), findsOneWidget);
       expect(find.text('EROSION IMPACT'), findsOneWidget);
-      expect(find.text('BASELINE VS CRISIS OVERLAY TRAJECTORY'), findsOneWidget);
+      expect(find.text('BASELINE VS PARALLEL CRISIS TRAJECTORIES'), findsOneWidget);
 
       // Expand Crisis Stress-Test Educational Guide
       expect(find.text('Understanding Sequence-of-Returns Risk (SORR)'), findsNothing);
@@ -222,7 +222,7 @@ void main() {
       // Switch to 2020 Flash Crash chip
       await tester.tap(find.descendant(of: find.byType(ChoiceChip), matching: find.text('2020 Flash Crash')), warnIfMissed: false);
       await tester.pumpAndSettle();
-      expect(find.textContaining('quick shock'), findsOneWidget);
+      expect(find.textContaining('COVID-19 shock'), findsOneWidget);
     });
 
     testWidgets('Given underfunded SWP corpus, When rendered, Then displays Solvency & Minimum Recommended Starting Corpus Card with benchmarks', (tester) async {

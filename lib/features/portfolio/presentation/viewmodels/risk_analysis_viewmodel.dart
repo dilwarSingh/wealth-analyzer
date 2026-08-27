@@ -15,6 +15,7 @@ class RiskAnalysisState {
   final double customCrashPercent;
   final MonteCarloResult monteCarloResult;
   final CrisisStressTestResult crisisStressTestResult;
+  final Map<CrisisScenario, CrisisStressTestResult> allCrisisStressTestResults;
 
   const RiskAnalysisState({
     required this.volatilityPercent,
@@ -23,6 +24,7 @@ class RiskAnalysisState {
     required this.customCrashPercent,
     required this.monteCarloResult,
     required this.crisisStressTestResult,
+    this.allCrisisStressTestResults = const {},
   });
 
   factory RiskAnalysisState.initial() {
@@ -33,6 +35,7 @@ class RiskAnalysisState {
       customCrashPercent: -30.0,
       monteCarloResult: MonteCarloResult.empty(),
       crisisStressTestResult: CrisisStressTestResult.empty(CrisisScenario.gfc2008),
+      allCrisisStressTestResults: const {},
     );
   }
 
@@ -43,6 +46,7 @@ class RiskAnalysisState {
     double? customCrashPercent,
     MonteCarloResult? monteCarloResult,
     CrisisStressTestResult? crisisStressTestResult,
+    Map<CrisisScenario, CrisisStressTestResult>? allCrisisStressTestResults,
   }) {
     return RiskAnalysisState(
       volatilityPercent: volatilityPercent ?? this.volatilityPercent,
@@ -51,6 +55,7 @@ class RiskAnalysisState {
       customCrashPercent: customCrashPercent ?? this.customCrashPercent,
       monteCarloResult: monteCarloResult ?? this.monteCarloResult,
       crisisStressTestResult: crisisStressTestResult ?? this.crisisStressTestResult,
+      allCrisisStressTestResults: allCrisisStressTestResults ?? this.allCrisisStressTestResults,
     );
   }
 }
@@ -179,9 +184,13 @@ class RiskAnalysisViewModel extends StateNotifier<RiskAnalysisState> {
         : projState.simulationResult.finalBaseNetWorth;
 
     if (initialCorpus <= 0) {
+      final emptyMap = {
+        for (final s in CrisisScenario.values) s: CrisisStressTestResult.empty(s),
+      };
       state = state.copyWith(
         monteCarloResult: MonteCarloResult.empty(),
         crisisStressTestResult: CrisisStressTestResult.empty(state.selectedCrisisScenario),
+        allCrisisStressTestResults: emptyMap,
       );
       return;
     }
@@ -202,25 +211,29 @@ class RiskAnalysisViewModel extends StateNotifier<RiskAnalysisState> {
       milestoneExpenses: swpState.milestoneExpenses,
     );
 
-    // Run Crisis Stress Test
-    final stressResult = _stressUseCase.execute(
-      scenario: state.selectedCrisisScenario,
-      initialCorpus: initialCorpus,
-      initialMonthlyWithdrawal: swpState.monthlyWithdrawal,
-      baselineAnnualReturnPercent: swpState.postRetirementCagr,
-      annualWithdrawalStepUpPercent: swpState.inflationStepUp,
-      startAge: startAge,
-      targetEndAge: endAge,
-      customYear1CrashPercent: state.customCrashPercent,
-      currentAge: currentAge,
-      isWithdrawalInTodayTerms: swpState.isWithdrawalInTodayTerms,
-      annualInflationPercent: inflationRate,
-      milestoneExpenses: swpState.milestoneExpenses,
-    );
+    // Run Crisis Stress Test for all scenarios in parallel
+    final allResults = <CrisisScenario, CrisisStressTestResult>{};
+    for (final scenario in CrisisScenario.values) {
+      allResults[scenario] = _stressUseCase.execute(
+        scenario: scenario,
+        initialCorpus: initialCorpus,
+        initialMonthlyWithdrawal: swpState.monthlyWithdrawal,
+        baselineAnnualReturnPercent: swpState.postRetirementCagr,
+        annualWithdrawalStepUpPercent: swpState.inflationStepUp,
+        startAge: startAge,
+        targetEndAge: endAge,
+        customYear1CrashPercent: state.customCrashPercent,
+        currentAge: currentAge,
+        isWithdrawalInTodayTerms: swpState.isWithdrawalInTodayTerms,
+        annualInflationPercent: inflationRate,
+        milestoneExpenses: swpState.milestoneExpenses,
+      );
+    }
 
     state = state.copyWith(
       monteCarloResult: mcResult,
-      crisisStressTestResult: stressResult,
+      crisisStressTestResult: allResults[state.selectedCrisisScenario] ?? CrisisStressTestResult.empty(state.selectedCrisisScenario),
+      allCrisisStressTestResults: allResults,
     );
   }
 
@@ -233,8 +246,10 @@ class RiskAnalysisViewModel extends StateNotifier<RiskAnalysisState> {
   }
 
   void selectCrisisScenario(CrisisScenario scenario) {
-    state = state.copyWith(selectedCrisisScenario: scenario);
-    _recalculate(_ref.read(swpProvider), _ref.read(projectionProvider));
+    state = state.copyWith(
+      selectedCrisisScenario: scenario,
+      crisisStressTestResult: state.allCrisisStressTestResults[scenario] ?? state.crisisStressTestResult,
+    );
   }
 
   void setCustomCrashPercent(double crashPercent) {

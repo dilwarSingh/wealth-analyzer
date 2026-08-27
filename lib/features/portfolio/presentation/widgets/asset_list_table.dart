@@ -220,12 +220,16 @@ class AssetListTable extends ConsumerWidget {
                               ),
                             ),
                             Text(
-                              asset.category.label,
+                              asset.subCategory != null && asset.subCategory!.isNotEmpty
+                                  ? '${asset.category.label} • ${asset.subCategory!}'
+                                  : asset.category.label,
                               style: GoogleFonts.inter(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w500,
                                 color: isIncluded ? asset.category.color : AppColors.textDisabled,
                               ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),
@@ -248,38 +252,58 @@ class AssetListTable extends ConsumerWidget {
                       child: Text(
                         asset.isSip ? 'SIP (${asset.stepUpRate.toStringAsFixed(0)}% Step)' : 'Lump Sum',
                         style: GoogleFonts.inter(
-                          fontSize: 10,
+                          fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: isIncluded ? (asset.isSip ? AppColors.crimsonLight : AppColors.textSecondary) : AppColors.textDisabled,
+                          color: isIncluded ? (asset.isSip ? AppColors.crimson : AppColors.textSecondary) : AppColors.textDisabled,
                         ),
                       ),
                     ),
                   ),
                 ),
                 DataCell(
-                  Text(
-                    asset.isSip
-                        ? '${CurrencyFormatter.formatCompact(asset.investedAmount, currency: currency)} / mo'
-                        : CurrencyFormatter.formatCompact(asset.investedAmount, currency: currency),
-                    style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: secondaryTextColor),
+                  Opacity(
+                    opacity: isIncluded ? 1.0 : 0.45,
+                    child: Text(
+                      asset.isSip
+                          ? '${CurrencyFormatter.formatCompact(asset.investedAmount, currency: currency)} /mo'
+                          : CurrencyFormatter.formatCompact(asset.investedAmount, currency: currency),
+                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: textColor),
+                    ),
                   ),
                 ),
                 DataCell(
-                  Text(
-                    CurrencyFormatter.formatCompact(asset.currentValue, currency: currency),
-                    style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w700, color: valuationColor),
+                  Opacity(
+                    opacity: isIncluded ? 1.0 : 0.45,
+                    child: Text(
+                      asset.isSip && asset.currentValue == 0
+                          ? 'SIP Active'
+                          : CurrencyFormatter.formatCompact(asset.currentValue, currency: currency),
+                      style: GoogleFonts.outfit(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: asset.isSip && asset.currentValue == 0 ? AppColors.textMuted : valuationColor,
+                      ),
+                    ),
                   ),
                 ),
                 DataCell(
-                  Text(
-                    '${asset.expectedCAGR.toStringAsFixed(1)}%',
-                    style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: textColor),
+                  Opacity(
+                    opacity: isIncluded ? 1.0 : 0.45,
+                    child: Text(
+                      '${asset.expectedCAGR.toStringAsFixed(1)}%',
+                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: secondaryTextColor),
+                    ),
                   ),
                 ),
                 DataCell(
-                  Text(
-                    CurrencyFormatter.formatPercent(asset.returnPercentage),
-                    style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: returnColor),
+                  Opacity(
+                    opacity: isIncluded ? 1.0 : 0.45,
+                    child: Text(
+                      asset.isSip && asset.currentValue == 0
+                          ? '—'
+                          : CurrencyFormatter.formatPercent(asset.returnPercentage),
+                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: returnColor),
+                    ),
                   ),
                 ),
                 DataCell(
@@ -288,6 +312,7 @@ class AssetListTable extends ConsumerWidget {
                     children: [
                       IconButton(
                         icon: const Icon(Icons.edit_rounded, size: 16, color: AppColors.textSecondary),
+                        tooltip: 'Edit Holding',
                         onPressed: () {
                           showDialog(
                             context: context,
@@ -297,6 +322,7 @@ class AssetListTable extends ConsumerWidget {
                       ),
                       IconButton(
                         icon: const Icon(Icons.delete_outline_rounded, size: 16, color: AppColors.loss),
+                        tooltip: 'Delete Holding',
                         onPressed: () => _confirmDelete(context, ref, asset),
                       ),
                     ],
@@ -361,15 +387,32 @@ class AssetListTable extends ConsumerWidget {
                           Icon(asset.category.icon, size: 16, color: isIncluded ? asset.category.color : AppColors.textDisabled),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: Text(
-                              asset.name,
-                              style: GoogleFonts.inter(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                                color: isIncluded ? AppColors.textPrimary : AppColors.textDisabled,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  asset.name,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: isIncluded ? AppColors.textPrimary : AppColors.textDisabled,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                Text(
+                                  asset.subCategory != null && asset.subCategory!.isNotEmpty
+                                      ? '${asset.category.label} • ${asset.subCategory!}'
+                                      : asset.category.label,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w500,
+                                    color: isIncluded ? asset.category.color : AppColors.textDisabled,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
                             ),
                           ),
                         ],

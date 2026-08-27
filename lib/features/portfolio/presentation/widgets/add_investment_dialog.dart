@@ -7,6 +7,7 @@ import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/widgets/crimson_button.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../domain/entities/asset_category.dart';
+import '../../domain/entities/asset_subcategories.dart';
 import '../../domain/entities/investment_asset.dart';
 import '../viewmodels/currency_viewmodel.dart';
 import '../viewmodels/portfolio_viewmodel.dart';
@@ -29,10 +30,15 @@ class _AddInvestmentDialogState extends ConsumerState<AddInvestmentDialog> {
   late TextEditingController _currentValController;
   late TextEditingController _cagrController;
   late TextEditingController _stepUpController;
+  late TextEditingController _customSubCategoryController;
 
   late AssetCategory _selectedCategory;
   late InvestmentType _selectedType;
   DateTime _startDate = DateTime.now();
+
+  String? _selectedSubCategory;
+  String? _selectedMfGroup;
+  String? _selectedMfSubCategory;
 
   @override
   void initState() {
@@ -43,16 +49,65 @@ class _AddInvestmentDialogState extends ConsumerState<AddInvestmentDialog> {
     _investedController = TextEditingController(text: a != null ? a.investedAmount.toStringAsFixed(0) : '');
     _currentValController = TextEditingController(text: a != null ? a.currentValue.toStringAsFixed(0) : '');
     _cagrController = TextEditingController(text: a != null ? a.expectedCAGR.toStringAsFixed(1) : '12.0');
-    _stepUpController = TextEditingController(text: a != null ? a.stepUpRate.toStringAsFixed(0) : '10.0');
+    _stepUpController = TextEditingController(text: a != null ? a.stepUpRate.toStringAsFixed(0) : '');
+    _customSubCategoryController = TextEditingController();
 
     _selectedCategory = a?.category ?? AssetCategory.mutualFunds;
     _selectedType = a?.type ?? InvestmentType.monthlySip;
     _startDate = a?.startDate ?? DateTime.now();
 
+    // Parse existing subcategory if editing
+    if (a?.subCategory != null && a!.subCategory!.trim().isNotEmpty) {
+      final sub = a.subCategory!.trim();
+      if (_selectedCategory == AssetCategory.mutualFunds) {
+        if (sub.contains(':')) {
+          final parts = sub.split(':');
+          final group = parts[0].trim();
+          final subSub = parts.sublist(1).join(':').trim();
+          _selectedMfGroup = AssetSubcategories.mutualFundHierarchy.containsKey(group) ? group : 'Other';
+          if (_selectedMfGroup == 'Other') {
+            _customSubCategoryController.text = sub;
+          } else {
+            final validLevel2 = AssetSubcategories.mutualFundHierarchy[_selectedMfGroup] ?? [];
+            if (validLevel2.contains(subSub)) {
+              _selectedMfSubCategory = subSub;
+            } else {
+              _selectedMfSubCategory = 'Other';
+              _customSubCategoryController.text = subSub;
+            }
+          }
+        } else if (AssetSubcategories.mutualFundHierarchy.containsKey(sub)) {
+          _selectedMfGroup = sub;
+          _selectedMfSubCategory = null;
+        } else {
+          _selectedMfGroup = 'Other';
+          _customSubCategoryController.text = sub;
+        }
+      } else {
+        final presets = AssetSubcategories.getPresetsForCategory(_selectedCategory);
+        if (presets.contains(sub)) {
+          _selectedSubCategory = sub;
+        } else {
+          _selectedSubCategory = 'Other';
+          _customSubCategoryController.text = sub;
+        }
+      }
+    } else {
+      // Default initial presets
+      if (_selectedCategory == AssetCategory.mutualFunds) {
+        _selectedMfGroup = 'Equity';
+        _selectedMfSubCategory = 'Flexi Cap';
+      } else {
+        final presets = AssetSubcategories.getPresetsForCategory(_selectedCategory);
+        _selectedSubCategory = presets.isNotEmpty ? presets.first : null;
+      }
+    }
+
     _investedController.addListener(() => setState(() {}));
     _currentValController.addListener(() => setState(() {}));
     _cagrController.addListener(() => setState(() {}));
     _stepUpController.addListener(() => setState(() {}));
+    _customSubCategoryController.addListener(() => setState(() {}));
   }
 
   @override
@@ -62,6 +117,7 @@ class _AddInvestmentDialogState extends ConsumerState<AddInvestmentDialog> {
     _currentValController.dispose();
     _cagrController.dispose();
     _stepUpController.dispose();
+    _customSubCategoryController.dispose();
     super.dispose();
   }
 
@@ -84,6 +140,7 @@ class _AddInvestmentDialogState extends ConsumerState<AddInvestmentDialog> {
       id: 'preview',
       name: 'Preview',
       category: _selectedCategory,
+      subCategory: _getEffectiveSubCategory(),
       type: _selectedType,
       investedAmount: invested,
       currentValue: current,
@@ -93,6 +150,41 @@ class _AddInvestmentDialogState extends ConsumerState<AddInvestmentDialog> {
     );
 
     return tempAsset.tenYearProjectedValue;
+  }
+
+  void _onCategoryChanged(AssetCategory cat) {
+    setState(() {
+      _selectedCategory = cat;
+      _customSubCategoryController.clear();
+      if (cat == AssetCategory.mutualFunds) {
+        _selectedMfGroup = 'Equity';
+        _selectedMfSubCategory = 'Flexi Cap';
+        _selectedSubCategory = null;
+      } else {
+        final presets = AssetSubcategories.getPresetsForCategory(cat);
+        _selectedSubCategory = presets.isNotEmpty ? presets.first : null;
+        _selectedMfGroup = null;
+        _selectedMfSubCategory = null;
+      }
+    });
+  }
+
+  String? _getEffectiveSubCategory() {
+    if (_selectedCategory == AssetCategory.mutualFunds) {
+      if (_selectedMfGroup == null) return null;
+      return AssetSubcategories.formatMutualFundSubcategory(
+        _selectedMfGroup!,
+        _selectedMfSubCategory,
+        customText: _customSubCategoryController.text,
+      );
+    } else {
+      if (_selectedSubCategory == null) return null;
+      if (_selectedSubCategory == 'Other') {
+        final custom = _customSubCategoryController.text.trim();
+        return custom.isNotEmpty ? custom : 'Other';
+      }
+      return _selectedSubCategory;
+    }
   }
 
   @override
@@ -107,7 +199,7 @@ class _AddInvestmentDialogState extends ConsumerState<AddInvestmentDialog> {
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       child: ConstrainedBox(
         constraints: BoxConstraints(
-          maxWidth: 580,
+          maxWidth: 640,
           maxHeight: screenHeight * 0.88,
         ),
         child: GlassContainer(
@@ -161,6 +253,7 @@ class _AddInvestmentDialogState extends ConsumerState<AddInvestmentDialog> {
               // Scrollable Form Body
               Flexible(
                 child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
                   child: Form(
                     key: _formKey,
                     child: Column(
@@ -210,7 +303,7 @@ class _AddInvestmentDialogState extends ConsumerState<AddInvestmentDialog> {
                           children: AssetCategory.values.map((cat) {
                             final isSelected = _selectedCategory == cat;
                             return InkWell(
-                              onTap: () => setState(() => _selectedCategory = cat),
+                              onTap: () => _onCategoryChanged(cat),
                               borderRadius: BorderRadius.circular(8),
                               child: AnimatedContainer(
                                 duration: const Duration(milliseconds: 150),
@@ -245,6 +338,11 @@ class _AddInvestmentDialogState extends ConsumerState<AddInvestmentDialog> {
 
                         const SizedBox(height: 14),
 
+                        // Subcategory Selector
+                        _buildSubCategorySelector(),
+
+                        const SizedBox(height: 14),
+
                         // Asset Name
                         _buildFieldLabel(
                           'ASSET NAME',
@@ -270,7 +368,7 @@ class _AddInvestmentDialogState extends ConsumerState<AddInvestmentDialog> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   _buildFieldLabel(
-                                    _selectedType == InvestmentType.monthlySip ? 'MONTHLY SIP AMOUNT' : 'INVESTED CAPITAL',
+                                    _selectedType == InvestmentType.monthlySip ? 'MONTHLY SIP' : 'INVESTED CAPITAL',
                                     _selectedType == InvestmentType.monthlySip
                                         ? 'The recurring installment amount you invest each month into this SIP.'
                                         : 'The initial principal amount or original capital you spent to acquire this asset.',
@@ -301,7 +399,7 @@ class _AddInvestmentDialogState extends ConsumerState<AddInvestmentDialog> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   _buildFieldLabel(
-                                    'CURRENT VALUATION',
+                                    'CURRENT VALUE',
                                     _selectedType == InvestmentType.monthlySip
                                         ? 'Current total market value of units already accumulated so far. Leave blank or 0 if starting fresh today.'
                                         : 'Current live market value of this asset today. Used to compute your unrealized profit or loss.',
@@ -582,7 +680,7 @@ class _AddInvestmentDialogState extends ConsumerState<AddInvestmentDialog> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Expanded(
+          Flexible(
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -594,7 +692,7 @@ class _AddInvestmentDialogState extends ConsumerState<AddInvestmentDialog> {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                const SizedBox(width: 5),
+                const SizedBox(width: 4),
                 Tooltip(
                   message: tooltipMessage,
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -638,12 +736,10 @@ class _AddInvestmentDialogState extends ConsumerState<AddInvestmentDialog> {
           ),
           if (controller != null && currency != null) ...[
             const SizedBox(width: 4),
-            Flexible(
-              child: CompactAmountLabel(
-                controller: controller,
-                currency: currency,
-                accentColor: AppColors.goldLight,
-              ),
+            CompactAmountLabel(
+              controller: controller,
+              currency: currency,
+              accentColor: AppColors.goldLight,
             ),
           ],
         ],
@@ -683,6 +779,193 @@ class _AddInvestmentDialogState extends ConsumerState<AddInvestmentDialog> {
     );
   }
 
+  Widget _buildSubCategorySelector() {
+    if (_selectedCategory == AssetCategory.mutualFunds) {
+      final groups = AssetSubcategories.mutualFundHierarchy.keys.toList();
+      final currentGroup = _selectedMfGroup ?? 'Equity';
+      final level2Options = AssetSubcategories.mutualFundHierarchy[currentGroup] ?? [];
+
+      final isOtherGroup = currentGroup == 'Other';
+      final isOtherSubSub = _selectedMfSubCategory == 'Other';
+      final showCustomInput = isOtherGroup || isOtherSubSub;
+
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceLight.withOpacity(0.5),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.catMutualFunds.withOpacity(0.3)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildFieldLabel(
+              'MUTUAL FUND ASSET CLASS (LEVEL 1)',
+              'Choose the overarching mutual fund asset class (Equity, Debt, Hybrid, Index/ETF, or Solution Oriented).',
+            ),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: groups.map((g) {
+                final isSelected = _selectedMfGroup == g;
+                return ChoiceChip(
+                  label: Text(g),
+                  selected: isSelected,
+                  selectedColor: AppColors.catMutualFunds.withOpacity(0.25),
+                  backgroundColor: AppColors.surfaceLight,
+                  side: BorderSide(
+                    color: isSelected ? AppColors.catMutualFunds : AppColors.border,
+                    width: isSelected ? 1.4 : 1,
+                  ),
+                  labelStyle: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    color: isSelected ? Colors.white : AppColors.textSecondary,
+                  ),
+                  onSelected: (selected) {
+                    if (selected) {
+                      setState(() {
+                        _selectedMfGroup = g;
+                        final options = AssetSubcategories.mutualFundHierarchy[g] ?? [];
+                        _selectedMfSubCategory = options.isNotEmpty ? options.first : null;
+                        if (g != 'Other') {
+                          _customSubCategoryController.clear();
+                        }
+                      });
+                    }
+                  },
+                );
+              }).toList(),
+            ),
+            if (level2Options.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              _buildFieldLabel(
+                '$currentGroup FUND CATEGORY (LEVEL 2)',
+                'Select the specific $currentGroup category or fund structure.',
+              ),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: level2Options.map((sub) {
+                  final isSelected = _selectedMfSubCategory == sub;
+                  return ChoiceChip(
+                    label: Text(sub),
+                    selected: isSelected,
+                    selectedColor: AppColors.gold.withOpacity(0.2),
+                    backgroundColor: AppColors.surfaceLight,
+                    side: BorderSide(
+                      color: isSelected ? AppColors.gold : AppColors.border,
+                      width: isSelected ? 1.4 : 1,
+                    ),
+                    labelStyle: GoogleFonts.inter(
+                      fontSize: 11,
+                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                      color: isSelected ? AppColors.goldLight : AppColors.textSecondary,
+                    ),
+                    onSelected: (selected) {
+                      if (selected) {
+                        setState(() {
+                          _selectedMfSubCategory = sub;
+                          if (sub != 'Other') {
+                            _customSubCategoryController.clear();
+                          }
+                        });
+                      }
+                    },
+                  );
+                }).toList(),
+              ),
+            ],
+            if (showCustomInput) ...[
+              const SizedBox(height: 10),
+              _buildFieldLabel(
+                'CUSTOM SUB-CATEGORY NAME',
+                'Specify your custom mutual fund category or fund type name.',
+              ),
+              TextFormField(
+                controller: _customSubCategoryController,
+                style: AppTypography.bodyMedium.copyWith(color: Colors.white),
+                decoration: _inputDecoration(
+                  hintText: 'e.g. Quant Multi-Asset, Overnight Fund, US Bluechip ETF',
+                  prefixIcon: Icons.edit_attributes_rounded,
+                ),
+              ),
+            ],
+          ],
+        ),
+      );
+    } else {
+      // Single-tier category
+      final presets = AssetSubcategories.getPresetsForCategory(_selectedCategory);
+      final isOtherSelected = _selectedSubCategory == 'Other';
+
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceLight.withOpacity(0.5),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: _selectedCategory.color.withOpacity(0.3)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildFieldLabel(
+              '${_selectedCategory.label.toUpperCase()} SUB-CATEGORY',
+              'Select the specific sub-type for ${_selectedCategory.label} or choose Other to enter a custom name.',
+            ),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: presets.map((sub) {
+                final isSelected = _selectedSubCategory == sub;
+                return ChoiceChip(
+                  label: Text(sub),
+                  selected: isSelected,
+                  selectedColor: _selectedCategory.color.withOpacity(0.2),
+                  backgroundColor: AppColors.surfaceLight,
+                  side: BorderSide(
+                    color: isSelected ? _selectedCategory.color : AppColors.border,
+                    width: isSelected ? 1.4 : 1,
+                  ),
+                  labelStyle: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    color: isSelected ? Colors.white : AppColors.textSecondary,
+                  ),
+                  onSelected: (selected) {
+                    if (selected) {
+                      setState(() {
+                        _selectedSubCategory = sub;
+                        if (sub != 'Other') {
+                          _customSubCategoryController.clear();
+                        }
+                      });
+                    }
+                  },
+                );
+              }).toList(),
+            ),
+            if (isOtherSelected) ...[
+              const SizedBox(height: 10),
+              _buildFieldLabel(
+                'CUSTOM SUB-CATEGORY NAME',
+                'Enter your custom sub-category name for ${_selectedCategory.label}.',
+              ),
+              TextFormField(
+                controller: _customSubCategoryController,
+                style: AppTypography.bodyMedium.copyWith(color: Colors.white),
+                decoration: _inputDecoration(
+                  hintText: 'e.g. Farmland, SGB Series IV, Angel Round',
+                  prefixIcon: Icons.edit_attributes_rounded,
+                ),
+              ),
+            ],
+          ],
+        ),
+      );
+    }
+  }
+
   bool _isSaving = false;
 
   Future<void> _saveAsset() async {
@@ -702,10 +985,13 @@ class _AddInvestmentDialogState extends ConsumerState<AddInvestmentDialog> {
     final cagr = double.tryParse(cagrStr) ?? 12.0;
     final stepUp = double.tryParse(stepUpStr) ?? 0.0;
 
+    final subCategory = _getEffectiveSubCategory();
+
     final asset = InvestmentAsset(
       id: widget.assetToEdit?.id ?? '',
       name: _nameController.text.trim(),
       category: _selectedCategory,
+      subCategory: subCategory,
       type: _selectedType,
       investedAmount: invested,
       currentValue: current,

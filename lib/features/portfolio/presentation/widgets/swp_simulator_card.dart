@@ -668,7 +668,7 @@ class _SwpSimulatorCardState extends ConsumerState<SwpSimulatorCard> {
       if (p.p90 > maxVal) maxVal = p.p90;
     }
     final maxY = (maxVal * 1.2).clamp(10000.0, double.infinity);
-    final interval = (maxY / 4).clamp(1.0, double.infinity);
+    final interval = (maxY / 8).clamp(1.0, double.infinity);
 
     final spotsP90 = <FlSpot>[...percentiles.map((p) => FlSpot(p.age.toDouble(), p.p90))];
     final spotsP50 = <FlSpot>[...percentiles.map((p) => FlSpot(p.age.toDouble(), p.p50))];
@@ -837,7 +837,7 @@ class _SwpSimulatorCardState extends ConsumerState<SwpSimulatorCard> {
         const SizedBox(height: 12),
         RepaintBoundary(
           child: SizedBox(
-            height: 250,
+            height: 380,
             child: LineChart(
             LineChartData(
               minY: 0,
@@ -853,7 +853,7 @@ class _SwpSimulatorCardState extends ConsumerState<SwpSimulatorCard> {
                 leftTitles: AxisTitles(
                   sideTitles: SideTitles(
                     showTitles: true,
-                    reservedSize: 64,
+                    reservedSize: 70,
                     interval: interval,
                     getTitlesWidget: (val, meta) {
                       if (val == meta.max || val == meta.min) return const SizedBox.shrink();
@@ -1052,17 +1052,71 @@ class _SwpSimulatorCardState extends ConsumerState<SwpSimulatorCard> {
         ? 'PORTFOLIO RESILIENT: Survives ${stressResult.scenario.title} to Age $endAge'
         : 'CORPUS FAILS EARLY: Depletes at Age ${depletionAge?.toStringAsFixed(1) ?? 'N/A'} under ${stressResult.scenario.title}';
 
-    final points = stressResult.yearlyPoints;
+    final allResults = riskState.allCrisisStressTestResults.isNotEmpty
+        ? riskState.allCrisisStressTestResults
+        : {riskState.selectedCrisisScenario: stressResult};
+
+    final scenariosToRender = CrisisScenario.values.where(
+      (s) => s != CrisisScenario.custom || riskState.selectedCrisisScenario == CrisisScenario.custom,
+    ).toList();
+
     double maxVal = 10000.0;
-    for (final p in points) {
-      if (p.baselineCorpus > maxVal) maxVal = p.baselineCorpus;
-      if (p.stressedCorpus > maxVal) maxVal = p.stressedCorpus;
+    for (final res in allResults.values) {
+      for (final p in res.yearlyPoints) {
+        if (p.baselineCorpus > maxVal) maxVal = p.baselineCorpus;
+        if (p.stressedCorpus > maxVal) maxVal = p.stressedCorpus;
+      }
     }
     final maxY = (maxVal * 1.2).clamp(10000.0, double.infinity);
-    final interval = (maxY / 4).clamp(1.0, double.infinity);
+    final interval = (maxY / 8).clamp(1.0, double.infinity);
 
-    final baselineSpots = <FlSpot>[...points.map((p) => FlSpot(p.age.toDouble(), p.baselineCorpus))];
-    final stressedSpots = <FlSpot>[...points.map((p) => FlSpot(p.age.toDouble(), p.stressedCorpus))];
+    final baselineSpots = <FlSpot>[...stressResult.yearlyPoints.map((p) => FlSpot(p.age.toDouble(), p.baselineCorpus))];
+
+    final List<LineChartBarData> lineBarsData = [
+      // Baseline curve (Gold dashed)
+      LineChartBarData(
+        spots: baselineSpots,
+        isCurved: true,
+        curveSmoothness: 0.2,
+        color: AppColors.gold,
+        barWidth: 2.5,
+        dashArray: [6, 4],
+        dotData: const FlDotData(show: false),
+      ),
+    ];
+
+    for (final s in scenariosToRender) {
+      final res = allResults[s] ?? stressResult;
+      final isSelected = s == riskState.selectedCrisisScenario;
+      final color = _getCrisisScenarioColor(s);
+      final spots = <FlSpot>[
+        ...res.yearlyPoints.map((p) => FlSpot(p.age.toDouble(), p.stressedCorpus)),
+      ];
+
+      lineBarsData.add(
+        LineChartBarData(
+          spots: spots,
+          isCurved: true,
+          curveSmoothness: 0.2,
+          color: isSelected ? color : color.withOpacity(0.7),
+          barWidth: isSelected ? 3.0 : 1.8,
+          dotData: const FlDotData(show: false),
+          belowBarData: isSelected
+              ? BarAreaData(
+                  show: true,
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      color.withOpacity(0.18),
+                      color.withOpacity(0.0),
+                    ],
+                  ),
+                )
+              : BarAreaData(show: false),
+        ),
+      );
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1111,16 +1165,22 @@ class _SwpSimulatorCardState extends ConsumerState<SwpSimulatorCard> {
           runSpacing: 8,
           children: CrisisScenario.values.map((s) {
             final isSelected = riskState.selectedCrisisScenario == s;
+            final scenarioColor = _getCrisisScenarioColor(s);
             return ChoiceChip(
+              avatar: Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(color: scenarioColor, shape: BoxShape.circle),
+              ),
               label: Text(s.title),
               selected: isSelected,
-              selectedColor: AppColors.gold.withOpacity(0.2),
+              selectedColor: scenarioColor.withOpacity(0.2),
               backgroundColor: AppColors.surfaceLight,
-              side: BorderSide(color: isSelected ? AppColors.gold : AppColors.border),
+              side: BorderSide(color: isSelected ? scenarioColor : AppColors.border),
               labelStyle: GoogleFonts.inter(
                 fontSize: 11,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: isSelected ? AppColors.goldLight : AppColors.textSecondary,
+                color: isSelected ? scenarioColor : AppColors.textSecondary,
               ),
               onSelected: (_) => ref.read(riskAnalysisProvider.notifier).selectCrisisScenario(s),
             );
@@ -1142,13 +1202,13 @@ class _SwpSimulatorCardState extends ConsumerState<SwpSimulatorCard> {
             max: -10.0,
             divisions: 40,
             icon: Icons.trending_down_rounded,
-            activeColor: AppColors.loss,
+            activeColor: _getCrisisScenarioColor(CrisisScenario.custom),
             onChanged: (val) => ref.read(riskAnalysisProvider.notifier).setCustomCrashPercent(val),
           ),
           const SizedBox(height: 16),
         ],
 
-        // Resilience Status Banner
+        // Resilience Banner
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
@@ -1161,7 +1221,7 @@ class _SwpSimulatorCardState extends ConsumerState<SwpSimulatorCard> {
               Row(
                 children: [
                   Icon(
-                    isResilient ? Icons.verified_user_rounded : Icons.gpp_maybe_rounded,
+                    isResilient ? Icons.check_circle_rounded : Icons.cancel_rounded,
                     color: badgeColor,
                     size: 22,
                   ),
@@ -1175,7 +1235,7 @@ class _SwpSimulatorCardState extends ConsumerState<SwpSimulatorCard> {
                             style: GoogleFonts.inter(
                               fontSize: 13,
                               fontWeight: FontWeight.w800,
-                              color: isResilient ? AppColors.profitLight : AppColors.lossLight,
+                              color: badgeColor == AppColors.profit ? AppColors.profitLight : badgeColor,
                               letterSpacing: 0.5,
                             ),
                             maxLines: 1,
@@ -1183,7 +1243,7 @@ class _SwpSimulatorCardState extends ConsumerState<SwpSimulatorCard> {
                           ),
                         ),
                         const SizedBox(width: 6),
-                        _buildTooltipIcon('Resilience Status: Tests whether your retirement portfolio survives the selected crisis crash in Year 1 of retirement or indicates the exact premature Depletion Age.'),
+                        _buildTooltipIcon('Crisis Resilience: Evaluates whether your retirement corpus survives a front-loaded Sequence-of-Returns shock at Year 1 of retirement without early depletion.'),
                       ],
                     ),
                   ),
@@ -1197,15 +1257,15 @@ class _SwpSimulatorCardState extends ConsumerState<SwpSimulatorCard> {
                       label: 'BASELINE ENDING CORPUS',
                       value: CurrencyFormatter.formatCompact(stressResult.baselineFinalCorpus, currency: currency),
                       color: AppColors.gold,
-                      tooltip: 'Baseline Ending Corpus: Your projected terminal wealth under normal expected returns without any early retirement crash shocks.',
+                      tooltip: 'Ending retirement corpus at target age assuming normal post-retirement return without crisis shocks.',
                     ),
                   ),
                   Expanded(
                     child: _buildMetricColWithTooltip(
                       label: 'STRESSED ENDING CORPUS',
                       value: CurrencyFormatter.formatCompact(stressResult.stressedFinalCorpus, currency: currency),
-                      color: isResilient ? AppColors.profit : AppColors.loss,
-                      tooltip: 'Stressed Ending Corpus: Your projected terminal wealth after suffering the historical market crash in the very first years of retirement.',
+                      color: stressResult.stressedFinalCorpus > 0 ? AppColors.profit : AppColors.loss,
+                      tooltip: 'Ending retirement balance after absorbing the full historical market shock in the earliest retirement years.',
                     ),
                   ),
                   Expanded(
@@ -1216,7 +1276,7 @@ class _SwpSimulatorCardState extends ConsumerState<SwpSimulatorCard> {
                         currency: currency,
                       ),
                       color: AppColors.loss,
-                      tooltip: 'Erosion Impact: The net reduction in final retirement wealth caused by the early crash combined with mandatory living expense withdrawals.',
+                      tooltip: 'Total wealth destroyed by the early retirement crisis due to compounding losses on liquidated assets.',
                     ),
                   ),
                 ],
@@ -1225,8 +1285,9 @@ class _SwpSimulatorCardState extends ConsumerState<SwpSimulatorCard> {
           ),
         ),
 
-        // Solvency Recommendation for all crisis scenarios
+        // Solvency Recommendation when stress test fails
         if (recommendation != null && (!isResilient || recommendation.isAnyCrisisAtRisk)) ...[
+          const SizedBox(height: 20),
           _buildCrisisSolvencyGrid(
             recommendation,
             riskState.selectedCrisisScenario,
@@ -1238,21 +1299,29 @@ class _SwpSimulatorCardState extends ConsumerState<SwpSimulatorCard> {
         const SizedBox(height: 20),
 
         // Comparative Overlay Line Chart
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Text('BASELINE VS CRISIS OVERLAY TRAJECTORY', style: AppTypography.heading3.copyWith(fontSize: 14)),
+                Text('BASELINE VS PARALLEL CRISIS TRAJECTORIES', style: AppTypography.heading3.copyWith(fontSize: 14)),
                 const SizedBox(width: 6),
-                _buildTooltipIcon('Directly overlays your normal baseline trajectory against the stressed crisis trajectory to visualize the drawdown and recovery timeline.'),
+                _buildTooltipIcon('Directly overlays your normal baseline trajectory alongside all historical crisis trajectories to compare drawdown and recovery timelines.'),
               ],
             ),
-            Row(
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 12,
+              runSpacing: 6,
               children: [
-                _buildLegendIndicator(AppColors.gold, 'Normal Baseline'),
-                const SizedBox(width: 12),
-                _buildLegendIndicator(AppColors.loss, 'Crisis Trajectory (Yr 1 Crash)'),
+                _buildLegendIndicator(AppColors.gold, 'Normal Baseline (Dashed)'),
+                for (final s in scenariosToRender)
+                  _buildLegendIndicator(
+                    _getCrisisScenarioColor(s),
+                    s.title,
+                    isSelected: s == riskState.selectedCrisisScenario,
+                    onTap: () => ref.read(riskAnalysisProvider.notifier).selectCrisisScenario(s),
+                  ),
               ],
             ),
           ],
@@ -1260,7 +1329,7 @@ class _SwpSimulatorCardState extends ConsumerState<SwpSimulatorCard> {
         const SizedBox(height: 12),
         RepaintBoundary(
           child: SizedBox(
-            height: 250,
+            height: 380,
             child: LineChart(
             LineChartData(
               minY: 0,
@@ -1276,7 +1345,7 @@ class _SwpSimulatorCardState extends ConsumerState<SwpSimulatorCard> {
                 leftTitles: AxisTitles(
                   sideTitles: SideTitles(
                     showTitles: true,
-                    reservedSize: 64,
+                    reservedSize: 70,
                     interval: interval,
                     getTitlesWidget: (val, meta) {
                       if (val == meta.max || val == meta.min) return const SizedBox.shrink();
@@ -1326,9 +1395,9 @@ class _SwpSimulatorCardState extends ConsumerState<SwpSimulatorCard> {
                       FlDotData(
                         show: true,
                         getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(
-                          radius: 5,
+                          radius: 4,
                           color: color,
-                          strokeWidth: 2,
+                          strokeWidth: 1.5,
                           strokeColor: Colors.white,
                         ),
                       ),
@@ -1338,22 +1407,13 @@ class _SwpSimulatorCardState extends ConsumerState<SwpSimulatorCard> {
                 touchTooltipData: LineTouchTooltipData(
                   fitInsideHorizontally: true,
                   fitInsideVertically: true,
-                  maxContentWidth: 290,
+                  maxContentWidth: 320,
                   tooltipPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   getTooltipColor: (_) => AppColors.surfaceCard.withOpacity(0.96),
-                  tooltipBorder: BorderSide(color: AppColors.loss.withOpacity(0.7), width: 1.2),
+                  tooltipBorder: BorderSide(color: _getCrisisScenarioColor(riskState.selectedCrisisScenario).withOpacity(0.7), width: 1.2),
                   tooltipBorderRadius: const BorderRadius.all(Radius.circular(10)),
                   getTooltipItems: (List<LineBarSpot> touchedSpots) {
                     final intAge = touchedSpots.first.x.toInt();
-                    double baselineVal = 0.0;
-                    double stressedVal = 0.0;
-
-                    for (final s in touchedSpots) {
-                      if (s.barIndex == 0) baselineVal = s.y;
-                      if (s.barIndex == 1) stressedVal = s.y;
-                    }
-
-                    final erosionVal = (baselineVal - stressedVal).clamp(0.0, double.infinity);
 
                     return touchedSpots.map((spot) {
                       String title;
@@ -1362,50 +1422,20 @@ class _SwpSimulatorCardState extends ConsumerState<SwpSimulatorCard> {
                         title = 'Normal Baseline: ${CurrencyFormatter.formatCompact(spot.y, currency: currency)}';
                         color = AppColors.goldLight;
                       } else {
-                        final erosionText = erosionVal > 0 ? '\nDrawdown Impact: -${CurrencyFormatter.formatCompact(erosionVal, currency: currency)}' : '';
-                        title = '${stressResult.scenario.title}: ${CurrencyFormatter.formatCompact(spot.y, currency: currency)}$erosionText';
-                        color = AppColors.lossLight;
+                        final s = scenariosToRender[spot.barIndex - 1];
+                        title = '${s.title}: ${CurrencyFormatter.formatCompact(spot.y, currency: currency)}';
+                        color = _getCrisisScenarioColor(s);
                       }
 
                       return LineTooltipItem(
                         spot.barIndex == 0 ? 'Age $intAge\n$title' : title,
-                        GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: color, height: 1.35),
+                        GoogleFonts.inter(fontSize: 10.5, fontWeight: FontWeight.w600, color: color, height: 1.3),
                       );
                     }).toList();
                   },
                 ),
               ),
-              lineBarsData: [
-                // Baseline curve (Gold dashed)
-                LineChartBarData(
-                  spots: baselineSpots,
-                  isCurved: true,
-                  curveSmoothness: 0.2,
-                  color: AppColors.gold.withOpacity(0.6),
-                  barWidth: 2,
-                  dotData: const FlDotData(show: false),
-                ),
-                // Stressed curve (Crimson/Loss bold)
-                LineChartBarData(
-                  spots: stressedSpots,
-                  isCurved: true,
-                  curveSmoothness: 0.2,
-                  color: AppColors.loss,
-                  barWidth: 2.5,
-                  dotData: const FlDotData(show: false),
-                  belowBarData: BarAreaData(
-                    show: true,
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        AppColors.loss.withOpacity(0.2),
-                        AppColors.loss.withOpacity(0.0),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+              lineBarsData: lineBarsData,
             ),
           ),
         ),
@@ -1525,14 +1555,59 @@ class _SwpSimulatorCardState extends ConsumerState<SwpSimulatorCard> {
     );
   }
 
-  Widget _buildLegendIndicator(Color color, String label) {
-    return Row(
+  Color _getCrisisScenarioColor(CrisisScenario scenario) {
+    switch (scenario) {
+      case CrisisScenario.gfc2008:
+        return const Color(0xFFEF4444);
+      case CrisisScenario.dotCom2000:
+        return const Color(0xFFF97316);
+      case CrisisScenario.flashCrash2020:
+        return const Color(0xFF06B6D4);
+      case CrisisScenario.stagflation:
+        return const Color(0xFFA855F7);
+      case CrisisScenario.custom:
+        return const Color(0xFFEC4899);
+    }
+  }
+
+  Widget _buildLegendIndicator(Color color, String label, {bool isSelected = false, VoidCallback? onTap}) {
+    final row = Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-        const SizedBox(width: 4),
-        Text(label, style: GoogleFonts.inter(fontSize: 10, color: AppColors.textSecondary)),
+        Container(
+          width: isSelected ? 10 : 8,
+          height: isSelected ? 10 : 8,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+            boxShadow: isSelected
+                ? [BoxShadow(color: color.withOpacity(0.6), blurRadius: 4, spreadRadius: 1)]
+                : null,
+          ),
+        ),
+        const SizedBox(width: 5),
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 10,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            color: isSelected ? color : AppColors.textSecondary,
+          ),
+        ),
       ],
     );
+
+    if (onTap != null) {
+      return InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(4),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+          child: row,
+        ),
+      );
+    }
+    return row;
   }
 
   PopupMenuItem<double> _buildRuleMenuItem(
@@ -2276,7 +2351,7 @@ class _SwpSimulatorCardState extends ConsumerState<SwpSimulatorCard> {
       if (p.closingBalance > maxVal) maxVal = p.closingBalance;
     }
     final maxY = maxVal > 0 ? (maxVal * 1.2) : 100000.0;
-    final interval = (maxY / 4).clamp(1.0, double.infinity);
+    final interval = (maxY / 8).clamp(1.0, double.infinity);
 
     final spots = <FlSpot>[
       FlSpot(startAge.toDouble(), result.initialCorpus),
@@ -2306,7 +2381,7 @@ class _SwpSimulatorCardState extends ConsumerState<SwpSimulatorCard> {
         const SizedBox(height: 12),
         RepaintBoundary(
           child: SizedBox(
-            height: 240,
+            height: 380,
             child: LineChart(
             LineChartData(
               minY: 0,
@@ -2322,7 +2397,7 @@ class _SwpSimulatorCardState extends ConsumerState<SwpSimulatorCard> {
                 leftTitles: AxisTitles(
                   sideTitles: SideTitles(
                     showTitles: true,
-                    reservedSize: 64,
+                    reservedSize: 70,
                     interval: interval,
                     getTitlesWidget: (val, meta) {
                       if (val == meta.max || val == meta.min) return const SizedBox.shrink();

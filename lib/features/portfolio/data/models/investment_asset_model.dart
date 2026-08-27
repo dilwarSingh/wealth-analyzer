@@ -5,6 +5,7 @@ class InvestmentAssetModel {
   final String id;
   final String name;
   final String category;
+  final String? subCategory;
   final String type;
   final double investedAmount;
   final double currentValue;
@@ -17,6 +18,7 @@ class InvestmentAssetModel {
     required this.id,
     required this.name,
     required this.category,
+    this.subCategory,
     required this.type,
     required this.investedAmount,
     required this.currentValue,
@@ -31,6 +33,7 @@ class InvestmentAssetModel {
       id: entity.id,
       name: entity.name,
       category: entity.category.name,
+      subCategory: entity.subCategory,
       type: entity.type.code,
       investedAmount: entity.investedAmount,
       currentValue: entity.currentValue,
@@ -46,6 +49,7 @@ class InvestmentAssetModel {
       id: id,
       name: name,
       category: AssetCategory.fromString(category),
+      subCategory: subCategory,
       type: InvestmentType.fromString(type),
       investedAmount: investedAmount,
       currentValue: currentValue,
@@ -61,6 +65,7 @@ class InvestmentAssetModel {
       'id': id,
       'name': name,
       'category': category,
+      if (subCategory != null) 'subCategory': subCategory,
       'type': type,
       'investedAmount': investedAmount,
       'currentValue': currentValue,
@@ -76,6 +81,7 @@ class InvestmentAssetModel {
       id: json['id'] as String? ?? '',
       name: json['name'] as String? ?? '',
       category: json['category'] as String? ?? 'other',
+      subCategory: json['subCategory'] as String?,
       type: json['type'] as String? ?? 'ONE_TIME',
       investedAmount: (json['investedAmount'] as num?)?.toDouble() ?? 0.0,
       currentValue: (json['currentValue'] as num?)?.toDouble() ?? 0.0,

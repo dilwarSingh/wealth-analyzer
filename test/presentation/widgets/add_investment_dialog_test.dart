@@ -116,5 +116,49 @@ void main() {
       expect(find.text('Existing Mutual Fund'), findsOneWidget);
       expect(find.text('Save Changes'), findsOneWidget);
     });
+
+    testWidgets('Given AddInvestmentDialog, When selecting Mutual Fund classes and subcategories or Other custom text, Then updates properly', (tester) async {
+      tester.view.physicalSize = const Size(1200, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      // Given
+      await tester.pumpWidget(buildTestDialog());
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Open Dialog'));
+      await tester.pumpAndSettle();
+
+      // Verify default Mutual Fund 2-tier UI
+      expect(find.text('MUTUAL FUND ASSET CLASS (LEVEL 1)'), findsOneWidget);
+      expect(find.text('Equity'), findsWidgets);
+      expect(find.text('Flexi Cap'), findsOneWidget);
+
+      // Tap Debt class
+      await tester.tap(find.text('Debt'));
+      await tester.pumpAndSettle();
+      expect(find.text('Debt FUND CATEGORY (LEVEL 2)'), findsOneWidget);
+      expect(find.text('Liquid / Overnight'), findsOneWidget);
+      expect(find.text('Money Market'), findsOneWidget);
+
+      // Select Money Market
+      await tester.tap(find.text('Money Market'));
+      await tester.pumpAndSettle();
+
+      // Switch to Gold category (1-tier)
+      await tester.tap(find.text('Gold/Precious Metals'));
+      await tester.pumpAndSettle();
+      expect(find.text('GOLD/PRECIOUS METALS SUB-CATEGORY'), findsOneWidget);
+      expect(find.text('Physical Gold (Coins / Bars)'), findsOneWidget);
+
+      // Select 'Other' and enter custom subcategory name
+      await tester.tap(find.text('Other').last);
+      await tester.pumpAndSettle();
+      expect(find.text('CUSTOM SUB-CATEGORY NAME'), findsOneWidget);
+
+      final customField = find.byWidgetPredicate((w) => w is TextField && w.decoration?.hintText?.contains('Farmland') == true);
+      expect(customField, findsOneWidget);
+      await tester.enterText(customField, '24K Gold Bullion Vault');
+      await tester.pumpAndSettle();
+    });
   });
 }

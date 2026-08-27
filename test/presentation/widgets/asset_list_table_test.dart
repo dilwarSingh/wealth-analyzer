@@ -53,7 +53,7 @@ void main() {
       await tester.pumpWidget(widget);
       await tester.pumpAndSettle();
 
-      // When: Save asset
+      // When: Save asset with subcategory
       final element = tester.element(find.byType(AssetListTable));
       final container = ProviderScope.containerOf(element);
       await container.read(portfolioProvider.notifier).saveAsset(
@@ -61,6 +61,7 @@ void main() {
           id: 'asset-test-row',
           name: 'Infosys Tech Equity',
           category: AssetCategory.equities,
+          subCategory: 'Large Cap Bluechip',
           type: InvestmentType.oneTime,
           investedAmount: 50000.0,
           currentValue: 65000.0,
@@ -73,7 +74,7 @@ void main() {
       // Then & Verify
       expect(find.text('1 / 1 Active'), findsOneWidget);
       expect(find.text('Infosys Tech Equity'), findsOneWidget);
-      expect(find.text('Stocks/Equities'), findsOneWidget);
+      expect(find.text('Stocks/Equities • Large Cap Bluechip'), findsOneWidget);
 
       // Checkboxes exist (Header master checkbox + Row checkbox)
       expect(find.byType(Checkbox), findsNWidgets(2));
