@@ -122,7 +122,6 @@ class AppHeader extends ConsumerWidget {
                         _buildNavTab(context, 1, 'Simulator', Icons.insights_rounded),
                         _buildNavTab(context, 2, 'FIRE Calculator', Icons.local_fire_department_rounded),
                         _buildNavTab(context, 3, 'Holdings (${portfolio.assets.length})', Icons.account_balance_wallet_rounded),
-                        _buildNavTab(context, 4, 'Sankey Flow', Icons.alt_route_rounded),
                       ],
                     ),
                   ),

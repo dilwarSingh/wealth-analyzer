@@ -44,9 +44,6 @@ void main() {
       await tester.tap(find.textContaining('Holdings'), warnIfMissed: false);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Sankey Flow'), warnIfMissed: false);
-      await tester.pumpAndSettle();
-
       await tester.tap(find.text('Overview'), warnIfMissed: false);
       await tester.pumpAndSettle();
     });

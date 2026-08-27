@@ -28,7 +28,7 @@ void main() {
     }
 
     testWidgets('Given AppHeader on desktop, When rendered, Then displays brand title, navigation tabs, currency toggle, and action buttons', (tester) async {
-      tester.view.physicalSize = const Size(1200, 800);
+      tester.view.physicalSize = const Size(1600, 800);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() => tester.view.resetPhysicalSize());
 
@@ -40,15 +40,16 @@ void main() {
       expect(find.text('PORTFOLIO MODELING'), findsOneWidget);
       expect(find.text('Overview'), findsOneWidget);
       expect(find.text('Simulator'), findsOneWidget);
+      expect(find.text('FIRE Calculator'), findsOneWidget);
       expect(find.text('Holdings (0)'), findsOneWidget);
-      expect(find.text('Sankey Flow'), findsOneWidget);
+      expect(find.text('Sankey Flow'), findsNothing);
       expect(find.text('₹ INR'), findsOneWidget);
       expect(find.text('\$ USD'), findsOneWidget);
       expect(find.text('+ Add Investment'), findsOneWidget);
     });
 
     testWidgets('Given AppHeader, When a navigation tab is tapped, Then triggers onTabSelected callback with correct index', (tester) async {
-      tester.view.physicalSize = const Size(1200, 800);
+      tester.view.physicalSize = const Size(1600, 800);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() => tester.view.resetPhysicalSize());
 
@@ -64,13 +65,21 @@ void main() {
       // When: Tap Simulator tab (index 1)
       await tester.tap(find.text('Simulator'));
       await tester.pumpAndSettle();
-
-      // Then & Verify
       expect(tappedIndex, equals(1));
+
+      // When: Tap FIRE Calculator tab (index 2)
+      await tester.tap(find.text('FIRE Calculator'));
+      await tester.pumpAndSettle();
+      expect(tappedIndex, equals(2));
+
+      // When: Tap Holdings tab (index 3)
+      await tester.tap(find.text('Holdings (0)'));
+      await tester.pumpAndSettle();
+      expect(tappedIndex, equals(3));
     });
 
     testWidgets('Given AppHeader, When USD currency segment is tapped, Then toggles currency provider state', (tester) async {
-      tester.view.physicalSize = const Size(1200, 800);
+      tester.view.physicalSize = const Size(1600, 800);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() => tester.view.resetPhysicalSize());
 

@@ -60,8 +60,6 @@ class DashboardMobileView extends ConsumerWidget {
                 const AssetListTable(),
                 const SizedBox(height: 16),
                 const DonutAllocationChart(),
-              ] else if (selectedTabIndex == 4) ...[
-                const SankeyCashFlowWidget(),
               ],
             ],
             const SizedBox(height: 80), // Padding for bottom bar & FAB
@@ -113,10 +111,6 @@ class DashboardMobileView extends ConsumerWidget {
             BottomNavigationBarItem(
               icon: Icon(Icons.account_balance_wallet_rounded),
               label: 'Holdings',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.alt_route_rounded),
-              label: 'Cash Flow',
             ),
           ],
         ),

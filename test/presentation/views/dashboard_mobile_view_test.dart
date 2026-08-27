@@ -105,6 +105,7 @@ void main() {
       // Tab 0: Overview (Donut, NetWorth, Sankey, AssetList)
       expect(find.byType(DonutAllocationChart), findsOneWidget);
       expect(find.byType(NetWorthAreaChart), findsOneWidget);
+      expect(find.byType(SankeyCashFlowWidget), findsOneWidget);
 
       // Tap Tab 1: Simulator
       await tester.tap(find.text('Simulator'));
@@ -124,12 +125,6 @@ void main() {
       await tester.pumpAndSettle();
       expect(selectedTab, equals(3));
       expect(find.byType(AssetListTable), findsOneWidget);
-
-      // Tap Tab 4: Cash Flow
-      await tester.tap(find.text('Cash Flow'));
-      await tester.pumpAndSettle();
-      expect(selectedTab, equals(4));
-      expect(find.byType(SankeyCashFlowWidget), findsOneWidget);
 
       // Tap FAB to open AddInvestmentDialog
       await tester.tap(find.byType(FloatingActionButton));

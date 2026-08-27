@@ -89,11 +89,6 @@ class DashboardDesktopView extends ConsumerWidget {
                       Expanded(flex: 5, child: DonutAllocationChart()),
                     ],
                   ),
-                ] else if (selectedTabIndex == 4) ...[
-                  // Cash Flow Sankey Tab
-                  const SankeyCashFlowWidget(),
-                  const SizedBox(height: 20),
-                  const DonutAllocationChart(),
                 ],
               ],
             ],
