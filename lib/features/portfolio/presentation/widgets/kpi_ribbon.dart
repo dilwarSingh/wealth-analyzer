@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_typography.dart';
 import '../../../../core/utils/currency_formatter.dart';
+import '../../../../core/widgets/app_tooltip.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../domain/entities/portfolio_summary.dart';
 import '../viewmodels/currency_viewmodel.dart';
@@ -35,6 +36,7 @@ class KpiRibbon extends ConsumerWidget {
                   iconColor: AppColors.gold,
                   badgeText: '${summary.totalAssetCount} Assets',
                   badgeColor: AppColors.gold,
+                  tooltipMessage: 'Current aggregated valuation across all active portfolio assets.',
                   isHighlighted: true,
                 ),
               ),
@@ -52,6 +54,7 @@ class KpiRibbon extends ConsumerWidget {
                   iconColor: AppColors.info,
                   badgeText: 'Recurring',
                   badgeColor: AppColors.info,
+                  tooltipMessage: 'Total recurring monthly systematic investments being contributed to your portfolio.',
                 ),
               ),
               const SizedBox(width: 14),
@@ -64,6 +67,7 @@ class KpiRibbon extends ConsumerWidget {
                   iconColor: AppColors.crimson,
                   badgeText: 'Weighted XIRR',
                   badgeColor: AppColors.crimson,
+                  tooltipMessage: 'Asset-weighted annual compounded return rate across all your investments.',
                 ),
               ),
             ],
@@ -82,6 +86,7 @@ class KpiRibbon extends ConsumerWidget {
                       iconColor: AppColors.gold,
                       badgeText: '${summary.totalAssetCount} Assets',
                       badgeColor: AppColors.gold,
+                      tooltipMessage: 'Current aggregated valuation across all active portfolio assets.',
                       isHighlighted: true,
                     ),
                   ),
@@ -103,6 +108,7 @@ class KpiRibbon extends ConsumerWidget {
                       iconColor: AppColors.info,
                       badgeText: 'Recurring',
                       badgeColor: AppColors.info,
+                      tooltipMessage: 'Total recurring monthly systematic investments being contributed to your portfolio.',
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -115,6 +121,7 @@ class KpiRibbon extends ConsumerWidget {
                       iconColor: AppColors.crimson,
                       badgeText: 'Weighted XIRR',
                       badgeColor: AppColors.crimson,
+                      tooltipMessage: 'Asset-weighted annual compounded return rate across all your investments.',
                     ),
                   ),
                 ],
@@ -133,6 +140,7 @@ class KpiRibbon extends ConsumerWidget {
                 iconColor: AppColors.gold,
                 badgeText: '${summary.totalAssetCount} Active Assets',
                 badgeColor: AppColors.gold,
+                tooltipMessage: 'Current aggregated valuation across all active portfolio assets.',
                 isHighlighted: true,
               ),
               const SizedBox(height: 10),
@@ -149,6 +157,7 @@ class KpiRibbon extends ConsumerWidget {
                       iconColor: AppColors.info,
                       badgeText: 'Per Mo',
                       badgeColor: AppColors.info,
+                      tooltipMessage: 'Total recurring monthly systematic investments being contributed to your portfolio.',
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -161,6 +170,7 @@ class KpiRibbon extends ConsumerWidget {
                       iconColor: AppColors.crimson,
                       badgeText: 'XIRR',
                       badgeColor: AppColors.crimson,
+                      tooltipMessage: 'Asset-weighted annual compounded return rate across all your investments.',
                     ),
                   ),
                 ],
@@ -180,8 +190,21 @@ class KpiRibbon extends ConsumerWidget {
     required Color iconColor,
     required String badgeText,
     required Color badgeColor,
+    String? tooltipMessage,
     bool isHighlighted = false,
   }) {
+    final titleWidget = Text(
+      title,
+      style: GoogleFonts.inter(
+        fontSize: 11,
+        fontWeight: FontWeight.w700,
+        color: AppColors.textMuted,
+        letterSpacing: 0.8,
+      ),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+
     return GlassContainer(
       padding: const EdgeInsets.all(18),
       borderColor: isHighlighted ? AppColors.gold.withOpacity(0.4) : AppColors.border,
@@ -199,17 +222,13 @@ class KpiRibbon extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
-                child: Text(
-                  title,
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textMuted,
-                    letterSpacing: 0.8,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                child: tooltipMessage != null
+                    ? AppTooltip(
+                        message: tooltipMessage,
+                        iconColor: iconColor,
+                        child: titleWidget,
+                      )
+                    : titleWidget,
               ),
               const SizedBox(width: 8),
               Container(
@@ -268,6 +287,18 @@ class KpiRibbon extends ConsumerWidget {
     final isGain = summary.totalUnrealizedGains >= 0;
     final gainColor = isGain ? AppColors.profit : AppColors.loss;
 
+    final titleWidget = Text(
+      'CAPITAL & RETURNS',
+      style: GoogleFonts.inter(
+        fontSize: 11,
+        fontWeight: FontWeight.w700,
+        color: AppColors.textMuted,
+        letterSpacing: 0.8,
+      ),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+
     return GlassContainer(
       padding: const EdgeInsets.all(18),
       borderColor: gainColor.withOpacity(0.3),
@@ -278,16 +309,10 @@ class KpiRibbon extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
-                child: Text(
-                  'CAPITAL & RETURNS',
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textMuted,
-                    letterSpacing: 0.8,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                child: AppTooltip(
+                  message: 'Unrealized profit/loss generated across all holdings compared against total invested capital.',
+                  iconColor: gainColor,
+                  child: titleWidget,
                 ),
               ),
               const SizedBox(width: 8),

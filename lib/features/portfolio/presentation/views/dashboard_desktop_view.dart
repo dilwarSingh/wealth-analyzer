@@ -80,13 +80,13 @@ class DashboardDesktopView extends ConsumerWidget {
                   // Dedicated FIRE Calculator Tab
                   const FireCalculatorCard(),
                 ] else if (selectedTabIndex == 3) ...[
-                  // Holdings Tab
+                  // Holdings Tab (75% Holdings Table, 25% Asset Allocation)
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: const [
-                      Expanded(flex: 7, child: AssetListTable()),
+                      Expanded(flex: 3, child: AssetListTable()),
                       SizedBox(width: 20),
-                      Expanded(flex: 5, child: DonutAllocationChart()),
+                      Expanded(flex: 1, child: DonutAllocationChart()),
                     ],
                   ),
                 ],

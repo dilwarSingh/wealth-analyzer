@@ -56,10 +56,14 @@ class CalculateGrowthProjectionUseCase {
 
         // Track capital invested over time
         if (asset.isSip) {
+          final maxDuration = (asset.sipDurationYears != null && asset.sipDurationYears! > 0)
+              ? asset.sipDurationYears!.toDouble()
+              : null;
           final addedSipCapital = FinancialCalculator.calculateTotalSipCapitalInvested(
             monthlyAmount: asset.investedAmount,
             years: y.toDouble(),
             stepUpPercent: stepUp,
+            maxDurationYears: maxDuration,
           );
           yearTotalInvested += addedSipCapital;
 
@@ -69,6 +73,7 @@ class CalculateGrowthProjectionUseCase {
             annualCagrPercent: 3.5,
             years: y.toDouble(),
             stepUpPercent: stepUp,
+            maxDurationYears: maxDuration,
           );
           yearCashDragValue += cashDragSip;
         }

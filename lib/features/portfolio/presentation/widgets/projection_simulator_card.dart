@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_typography.dart';
 import '../../../../core/utils/currency_formatter.dart';
+import '../../../../core/widgets/app_tooltip.dart';
 import '../../../../core/widgets/custom_slider.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../../../core/widgets/gold_badge.dart';
@@ -39,11 +40,15 @@ class ProjectionSimulatorCard extends ConsumerWidget {
                     const Icon(Icons.rocket_launch_rounded, size: 20, color: AppColors.gold),
                     const SizedBox(width: 8),
                     Flexible(
-                      child: Text(
-                        'WEALTH SIMULATOR',
-                        style: AppTypography.heading3.copyWith(fontSize: 16, letterSpacing: 0.5),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      child: AppTooltip(
+                        message: 'Simulate forward net worth compounding, real inflation purchasing power, and cash drag under various horizons.',
+                        iconColor: AppColors.gold,
+                        child: Text(
+                          'WEALTH SIMULATOR',
+                          style: AppTypography.heading3.copyWith(fontSize: 16, letterSpacing: 0.5),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ),
                   ],
@@ -150,6 +155,7 @@ class ProjectionSimulatorCard extends ConsumerWidget {
                 divisions: 52,
                 icon: Icons.person_rounded,
                 activeColor: AppColors.info,
+                tooltipMessage: 'Your present age; defines the starting point for compound growth projections.',
                 onChanged: (val) => ref.read(projectionProvider.notifier).setCurrentAge(val.round()),
               );
 
@@ -163,6 +169,7 @@ class ProjectionSimulatorCard extends ConsumerWidget {
                 divisions: 55,
                 icon: Icons.beach_access_rounded,
                 activeColor: AppColors.gold,
+                tooltipMessage: 'The age at which you plan to stop regular employment and transition into the retirement/SWP phase.',
                 onChanged: (val) => ref.read(projectionProvider.notifier).setTargetRetirementAge(val.round()),
               );
 
@@ -176,6 +183,7 @@ class ProjectionSimulatorCard extends ConsumerWidget {
                 divisions: 30,
                 icon: Icons.price_change_rounded,
                 activeColor: AppColors.loss,
+                tooltipMessage: 'Expected annual inflation rate used to calculate future real purchasing power in today\'s money terms.',
                 onChanged: (val) => ref.read(projectionProvider.notifier).setAnnualInflation(val),
               );
 
@@ -189,6 +197,7 @@ class ProjectionSimulatorCard extends ConsumerWidget {
                 divisions: 25,
                 icon: Icons.trending_up_rounded,
                 activeColor: AppColors.profit,
+                tooltipMessage: 'Annual percentage increase in your monthly SIP contributions as your earnings and savings grow.',
                 onChanged: (val) => ref.read(projectionProvider.notifier).setGlobalStepUp(val),
               );
 
@@ -388,9 +397,24 @@ class ProjectionSimulatorCard extends ConsumerWidget {
               spacing: 16,
               runSpacing: 8,
               children: [
-                _buildScenarioLegend('Base Case (Compound CAGR + Step-up)', AppColors.gold, isDashed: false),
-                _buildScenarioLegend('Real Wealth (Inflation Adjusted)', AppColors.info, isDashed: true),
-                _buildScenarioLegend('Cash Drag (3.5% Savings Account)', AppColors.loss, isDashed: true),
+                _buildScenarioLegend(
+                  'Base Case (Compound CAGR + Step-up)',
+                  AppColors.gold,
+                  isDashed: false,
+                  tooltipMessage: 'Nominal projected future wealth factoring in asset CAGRs and annual SIP step-up.',
+                ),
+                _buildScenarioLegend(
+                  'Real Wealth (Inflation Adjusted)',
+                  AppColors.info,
+                  isDashed: true,
+                  tooltipMessage: 'Purchasing power of your future wealth discounted by annual inflation rate.',
+                ),
+                _buildScenarioLegend(
+                  'Cash Drag (3.5% Savings Account)',
+                  AppColors.loss,
+                  isDashed: true,
+                  tooltipMessage: 'Opportunity cost trajectory if money were kept in a low-yield savings account (3.5%).',
+                ),
               ],
             ),
             const SizedBox(height: 24),
@@ -410,6 +434,7 @@ class ProjectionSimulatorCard extends ConsumerWidget {
                       simResult.finalBaseNetWorth,
                       currency,
                       AppColors.goldLight,
+                      tooltipMessage: 'Projected total wealth accumulated at target retirement age under expected returns.',
                     ),
                   ),
                   Container(width: 1, height: 40, color: AppColors.border),
@@ -419,6 +444,7 @@ class ProjectionSimulatorCard extends ConsumerWidget {
                       simResult.finalRealNetWorth,
                       currency,
                       AppColors.info,
+                      tooltipMessage: 'Actual purchasing power of your retirement corpus in today\'s currency terms.',
                     ),
                   ),
                   Container(width: 1, height: 40, color: AppColors.border),
@@ -429,6 +455,7 @@ class ProjectionSimulatorCard extends ConsumerWidget {
                       currency,
                       AppColors.profit,
                       prefix: '+',
+                      tooltipMessage: 'Additional wealth created by investing in compounding assets compared to a standard bank account.',
                     ),
                   ),
                 ],
@@ -442,8 +469,8 @@ class ProjectionSimulatorCard extends ConsumerWidget {
 
   static Widget _emptyTitleWidget(double value, TitleMeta meta) => const SizedBox.shrink();
 
-  Widget _buildScenarioLegend(String label, Color color, {required bool isDashed}) {
-    return Row(
+  Widget _buildScenarioLegend(String label, Color color, {required bool isDashed, String? tooltipMessage}) {
+    final legendItem = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
@@ -469,16 +496,41 @@ class ProjectionSimulatorCard extends ConsumerWidget {
         ),
       ],
     );
+
+    if (tooltipMessage != null) {
+      return AppTooltip(
+        message: tooltipMessage,
+        iconColor: color,
+        showIcon: false,
+        child: legendItem,
+      );
+    }
+    return legendItem;
   }
 
-  Widget _buildFinalOutcome(String label, double value, CurrencyType currency, Color color, {String prefix = ''}) {
+  Widget _buildFinalOutcome(
+    String label,
+    double value,
+    CurrencyType currency,
+    Color color, {
+    String prefix = '',
+    String? tooltipMessage,
+  }) {
+    final labelWidget = Text(
+      label,
+      style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.textMuted),
+      textAlign: TextAlign.center,
+    );
+
     return Column(
       children: [
-        Text(
-          label,
-          style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.textMuted),
-          textAlign: TextAlign.center,
-        ),
+        tooltipMessage != null
+            ? AppTooltip(
+                message: tooltipMessage,
+                iconColor: color,
+                child: labelWidget,
+              )
+            : labelWidget,
         const SizedBox(height: 4),
         Text(
           '$prefix${CurrencyFormatter.formatCompact(value, currency: currency)}',

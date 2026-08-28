@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -11,6 +12,7 @@ import '../../domain/entities/asset_subcategories.dart';
 import '../../domain/entities/investment_asset.dart';
 import '../viewmodels/currency_viewmodel.dart';
 import '../viewmodels/portfolio_viewmodel.dart';
+import '../viewmodels/projection_viewmodel.dart';
 import 'compact_amount_suffix_badge.dart';
 
 class AddInvestmentDialog extends ConsumerStatefulWidget {
@@ -40,6 +42,9 @@ class _AddInvestmentDialogState extends ConsumerState<AddInvestmentDialog> {
   String? _selectedMfGroup;
   String? _selectedMfSubCategory;
 
+  bool _isTillRetirement = true;
+  double _sipDurationYears = 5.0;
+
   @override
   void initState() {
     super.initState();
@@ -55,6 +60,14 @@ class _AddInvestmentDialogState extends ConsumerState<AddInvestmentDialog> {
     _selectedCategory = a?.category ?? AssetCategory.mutualFunds;
     _selectedType = a?.type ?? InvestmentType.monthlySip;
     _startDate = a?.startDate ?? DateTime.now();
+
+    if (a?.sipDurationYears != null && a!.sipDurationYears! > 0) {
+      _isTillRetirement = false;
+      _sipDurationYears = a.sipDurationYears!.toDouble();
+    } else {
+      _isTillRetirement = true;
+      _sipDurationYears = 5.0;
+    }
 
     // Parse existing subcategory if editing
     if (a?.subCategory != null && a!.subCategory!.trim().isNotEmpty) {
@@ -147,6 +160,9 @@ class _AddInvestmentDialogState extends ConsumerState<AddInvestmentDialog> {
       startDate: _startDate,
       expectedCAGR: cagr,
       stepUpRate: stepUp,
+      sipDurationYears: _selectedType == InvestmentType.monthlySip
+          ? (_isTillRetirement ? null : _sipDurationYears.toInt())
+          : null,
     );
 
     return tempAsset.tenYearProjectedValue;
@@ -190,6 +206,8 @@ class _AddInvestmentDialogState extends ConsumerState<AddInvestmentDialog> {
   @override
   Widget build(BuildContext context) {
     final currency = ref.watch(currencyProvider);
+    final projState = ref.watch(projectionProvider);
+    final horizonYears = math.max(1, projState.targetRetirementAge - projState.currentAge);
     final isEditing = widget.assetToEdit != null;
     final preview10Y = _calculateTenYearPreview();
     final screenHeight = MediaQuery.of(context).size.height;
@@ -499,6 +517,135 @@ class _AddInvestmentDialogState extends ConsumerState<AddInvestmentDialog> {
                           ],
                         ),
 
+                        if (_selectedType == InvestmentType.monthlySip) ...[
+                          const SizedBox(height: 14),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceLight.withOpacity(0.5),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: _isTillRetirement
+                                    ? AppColors.border
+                                    : AppColors.gold.withOpacity(0.4),
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.timelapse_rounded,
+                                            size: 16,
+                                            color: _isTillRetirement ? AppColors.profit : AppColors.gold,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Flexible(
+                                            child: _buildFieldLabel(
+                                              'SIP DURATION',
+                                              'Set how many years this monthly SIP will run. After this duration, monthly deposits stop, and your accumulated corpus continues compounding until retirement.',
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          _isTillRetirement ? 'Till Retirement' : 'Custom Years',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                            color: _isTillRetirement ? AppColors.profit : AppColors.goldLight,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Switch(
+                                          value: _isTillRetirement,
+                                          activeColor: AppColors.profit,
+                                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                          onChanged: (val) {
+                                            setState(() {
+                                              _isTillRetirement = val;
+                                              if (!_isTillRetirement && _sipDurationYears > horizonYears) {
+                                                _sipDurationYears = horizonYears.toDouble();
+                                              }
+                                            });
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                if (!_isTillRetirement) ...[
+                                  const SizedBox(height: 10),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        'Contribute for ${_sipDurationYears.toInt()} ${_sipDurationYears.toInt() == 1 ? "Year" : "Years"}',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w700,
+                                          color: AppColors.goldLight,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Flexible(
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.gold.withOpacity(0.15),
+                                            borderRadius: BorderRadius.circular(5),
+                                            border: Border.all(color: AppColors.gold.withOpacity(0.4)),
+                                          ),
+                                          child: Text(
+                                            'Stops at Age ${projState.currentAge + _sipDurationYears.toInt()} (compounds after)',
+                                            style: GoogleFonts.inter(
+                                              fontSize: 10.5,
+                                              fontWeight: FontWeight.w600,
+                                              color: AppColors.goldLight,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  SliderTheme(
+                                    data: SliderTheme.of(context).copyWith(
+                                      activeTrackColor: AppColors.gold,
+                                      inactiveTrackColor: AppColors.surfaceLight,
+                                      thumbColor: Colors.white,
+                                      overlayColor: AppColors.gold.withOpacity(0.2),
+                                      trackHeight: 3.5,
+                                    ),
+                                    child: Slider(
+                                      value: _sipDurationYears.clamp(1.0, math.max(1.0, horizonYears.toDouble())),
+                                      min: 1.0,
+                                      max: math.max(1.0, horizonYears.toDouble()),
+                                      divisions: horizonYears > 1 ? horizonYears - 1 : 1,
+                                      onChanged: (v) {
+                                        setState(() {
+                                          _sipDurationYears = v;
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ],
+
                         const SizedBox(height: 14),
 
                         // Real-time 10-Year Live Mini-Preview Card
@@ -536,6 +683,18 @@ class _AddInvestmentDialogState extends ConsumerState<AddInvestmentDialog> {
                                         color: AppColors.goldLight,
                                       ),
                                     ),
+                                    if (_selectedType == InvestmentType.monthlySip) ...[
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        _isTillRetirement
+                                            ? 'Continuous monthly SIP contributing throughout the 10-year projection.'
+                                            : 'Monthly SIP contributing for ${_sipDurationYears.toInt()} yrs, then compounding for ${math.max(0, 10 - _sipDurationYears.toInt())} yrs.',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 10.5,
+                                          color: AppColors.textMuted,
+                                        ),
+                                      ),
+                                    ],
                                   ],
                                 ),
                               ),
@@ -998,6 +1157,9 @@ class _AddInvestmentDialogState extends ConsumerState<AddInvestmentDialog> {
       startDate: _startDate,
       expectedCAGR: cagr,
       stepUpRate: _selectedType == InvestmentType.monthlySip ? stepUp : 0.0,
+      sipDurationYears: _selectedType == InvestmentType.monthlySip
+          ? (_isTillRetirement ? null : _sipDurationYears.toInt())
+          : null,
     );
 
     setState(() => _isSaving = true);

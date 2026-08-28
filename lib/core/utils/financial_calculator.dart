@@ -20,18 +20,35 @@ class FinancialCalculator {
     return currentValue * math.pow(1.0 + r, years);
   }
 
-  /// Calculate future value of a monthly SIP over [years] with optional annual [stepUpPercent].
+  /// Calculate future value of a monthly SIP over [years] with optional annual [stepUpPercent] and optional [maxDurationYears].
   /// Uses effective monthly rate i = (1 + r)^(1/12) - 1 matching standard financial platforms (e.g. Groww).
   /// [monthlyAmount]: Initial monthly installment
   /// [annualCagrPercent]: Expected annual CAGR (e.g. 12.0)
   /// [stepUpPercent]: Annual increase in monthly installment (e.g. 10.0 for 10%)
+  /// [maxDurationYears]: If set, monthly deposits stop after this duration and the accumulated balance compounds at [annualCagrPercent] for the remaining years.
   static double calculateSipFutureValue({
     required double monthlyAmount,
     required double annualCagrPercent,
     required double years,
     double stepUpPercent = 0.0,
+    double? maxDurationYears,
   }) {
     if (years <= 0 || monthlyAmount <= 0) return 0.0;
+
+    if (maxDurationYears != null && maxDurationYears > 0 && years > maxDurationYears) {
+      final sipValueAtDurationEnd = calculateSipFutureValue(
+        monthlyAmount: monthlyAmount,
+        annualCagrPercent: annualCagrPercent,
+        years: maxDurationYears,
+        stepUpPercent: stepUpPercent,
+      );
+      final remainingYears = years - maxDurationYears;
+      return calculateLumpSumFutureValue(
+        currentValue: sipValueAtDurationEnd,
+        annualCagrPercent: annualCagrPercent,
+        years: remainingYears,
+      );
+    }
 
     final totalMonths = (years * 12).round();
     final r = annualCagrPercent / 100.0;
@@ -44,6 +61,7 @@ class FinancialCalculator {
         monthlyAmount: monthlyAmount,
         years: years,
         stepUpPercent: stepUpPercent,
+        maxDurationYears: maxDurationYears,
       );
     }
 
@@ -61,14 +79,18 @@ class FinancialCalculator {
     return totalFutureValue;
   }
 
-  /// Total capital invested into a monthly SIP over [years] with [stepUpPercent].
+  /// Total capital invested into a monthly SIP over [years] with [stepUpPercent] and optional [maxDurationYears].
   static double calculateTotalSipCapitalInvested({
     required double monthlyAmount,
     required double years,
     double stepUpPercent = 0.0,
+    double? maxDurationYears,
   }) {
     if (years <= 0 || monthlyAmount <= 0) return 0.0;
-    final totalMonths = (years * 12).round();
+    final effectiveYears = (maxDurationYears != null && maxDurationYears > 0)
+        ? math.min(years, maxDurationYears)
+        : years;
+    final totalMonths = (effectiveYears * 12).round();
     final annualStepUp = stepUpPercent / 100.0;
     double totalInvested = 0.0;
     double currentMonthlyAmount = monthlyAmount;

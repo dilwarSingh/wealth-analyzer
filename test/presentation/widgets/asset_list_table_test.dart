@@ -95,5 +95,38 @@ void main() {
       expect(container.read(portfolioProvider).assets.first.isIncluded, isTrue);
       expect(find.text('1 / 1 Active'), findsOneWidget);
     });
+
+    testWidgets('Given SIP asset with custom duration (5 years), When AssetListTable renders, Then displays duration badge', (tester) async {
+      tester.view.physicalSize = const Size(1200, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      final mockDs = MockLocalDataSource();
+      final widget = buildTestWidget(mockDs: mockDs);
+
+      await tester.pumpWidget(widget);
+      await tester.pumpAndSettle();
+
+      final element = tester.element(find.byType(AssetListTable));
+      final container = ProviderScope.containerOf(element);
+      await container.read(portfolioProvider.notifier).saveAsset(
+        InvestmentAsset(
+          id: 'sip-duration-test',
+          name: 'HDFC Top 100 SIP',
+          category: AssetCategory.mutualFunds,
+          type: InvestmentType.monthlySip,
+          investedAmount: 10000.0,
+          currentValue: 50000.0,
+          startDate: DateTime.now(),
+          expectedCAGR: 12.0,
+          stepUpRate: 10.0,
+          sipDurationYears: 5,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('HDFC Top 100 SIP'), findsOneWidget);
+      expect(find.textContaining('⏳ 5 Yrs'), findsOneWidget);
+    });
   });
 }

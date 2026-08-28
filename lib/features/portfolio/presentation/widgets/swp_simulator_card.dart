@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_typography.dart';
 import '../../../../core/utils/currency_formatter.dart';
+import '../../../../core/widgets/app_tooltip.dart';
 import '../../../../core/widgets/custom_slider.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../domain/entities/risk_analysis_models.dart';
@@ -96,11 +97,15 @@ class _SwpSimulatorCardState extends ConsumerState<SwpSimulatorCard> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'SWP DECUMULATION SIMULATOR',
-                              style: AppTypography.heading3.copyWith(fontSize: 16),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                            AppTooltip(
+                              message: 'Systematic Withdrawal Plan (SWP) simulator modeling retirement cash outflows, sequence of returns risk (SORR), and Monte Carlo solvency.',
+                              iconColor: AppColors.gold,
+                              child: Text(
+                                'SWP DECUMULATION SIMULATOR',
+                                style: AppTypography.heading3.copyWith(fontSize: 16),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                             const SizedBox(height: 2),
                             Text(
@@ -115,41 +120,45 @@ class _SwpSimulatorCardState extends ConsumerState<SwpSimulatorCard> {
                     ],
                   ),
                   if (isWide)
-                    PopupMenuButton<double>(
-                      tooltip: 'Safe Withdrawal Rules (2%, 3%, 4%, 5%)',
-                      color: AppColors.surfaceCard,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        side: const BorderSide(color: AppColors.border),
-                      ),
-                      onSelected: (percentage) {
-                        ref.read(swpProvider.notifier).applyWithdrawalRule(percentage);
-                      },
-                      itemBuilder: (context) => [
-                        _buildRuleMenuItem(2.0, '2% Rule (Ultra-Safe / Early FIRE)', effectiveStartingCorpus, currency),
-                        _buildRuleMenuItem(3.0, '3% Rule (Conservative)', effectiveStartingCorpus, currency),
-                        _buildRuleMenuItem(4.0, '4% Rule (Standard Trinity)', effectiveStartingCorpus, currency),
-                        _buildRuleMenuItem(5.0, '5% Rule (Aggressive)', effectiveStartingCorpus, currency),
-                      ],
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceLight,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: AppColors.gold.withOpacity(0.5)),
+                    AppTooltip(
+                      message: 'Safe withdrawal rule-of-thumb presets (2% to 5%) based on the Trinity study.',
+                      showIcon: false,
+                      child: PopupMenuButton<double>(
+                        tooltip: 'Safe Withdrawal Rules (2%, 3%, 4%, 5%)',
+                        color: AppColors.surfaceCard,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          side: const BorderSide(color: AppColors.border),
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: const [
-                            Icon(Icons.shield_rounded, size: 16, color: AppColors.gold),
-                            SizedBox(width: 6),
-                            Text(
-                              'Withdrawal Rules',
-                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.gold),
-                            ),
-                            SizedBox(width: 4),
-                            Icon(Icons.arrow_drop_down_rounded, size: 18, color: AppColors.gold),
-                          ],
+                        onSelected: (percentage) {
+                          ref.read(swpProvider.notifier).applyWithdrawalRule(percentage);
+                        },
+                        itemBuilder: (context) => [
+                          _buildRuleMenuItem(2.0, '2% Rule (Ultra-Safe / Early FIRE)', effectiveStartingCorpus, currency),
+                          _buildRuleMenuItem(3.0, '3% Rule (Conservative)', effectiveStartingCorpus, currency),
+                          _buildRuleMenuItem(4.0, '4% Rule (Standard Trinity)', effectiveStartingCorpus, currency),
+                          _buildRuleMenuItem(5.0, '5% Rule (Aggressive)', effectiveStartingCorpus, currency),
+                        ],
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceLight,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppColors.gold.withOpacity(0.5)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              Icon(Icons.shield_rounded, size: 16, color: AppColors.gold),
+                              SizedBox(width: 6),
+                              Text(
+                                'Withdrawal Rules',
+                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.gold),
+                              ),
+                              SizedBox(width: 4),
+                              Icon(Icons.arrow_drop_down_rounded, size: 18, color: AppColors.gold),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -532,11 +541,26 @@ class _SwpSimulatorCardState extends ConsumerState<SwpSimulatorCard> {
             ),
             child: Row(
               children: [
-                _buildSubTabButton(0, 'Standard Schedule', Icons.table_chart_rounded),
+                _buildSubTabButton(
+                  0,
+                  'Standard Schedule',
+                  Icons.table_chart_rounded,
+                  tooltipMessage: 'Deterministic decumulation schedule assuming constant expected returns across retirement.',
+                ),
                 const SizedBox(width: 4),
-                _buildSubTabButton(1, 'Monte Carlo (1,000 Runs)', Icons.casino_rounded),
+                _buildSubTabButton(
+                  1,
+                  'Monte Carlo (1,000 Runs)',
+                  Icons.casino_rounded,
+                  tooltipMessage: '1,000 randomized market return simulations modeling sequence of returns volatility.',
+                ),
                 const SizedBox(width: 4),
-                _buildSubTabButton(2, 'Crisis Stress-Test (SORR)', Icons.bolt_rounded),
+                _buildSubTabButton(
+                  2,
+                  'Crisis Stress-Test (SORR)',
+                  Icons.bolt_rounded,
+                  tooltipMessage: 'Historical crisis scenarios (2008 GFC, 2000 Dot-Com, 2020 COVID) applied at retirement onset.',
+                ),
               ],
             ),
           ),
@@ -597,40 +621,54 @@ class _SwpSimulatorCardState extends ConsumerState<SwpSimulatorCard> {
     );
   }
 
-  Widget _buildSubTabButton(int index, String label, IconData icon) {
+  Widget _buildSubTabButton(int index, String label, IconData icon, {String? tooltipMessage}) {
     final isSelected = _selectedSubTab == index;
-    return Expanded(
-      child: InkWell(
-        onTap: () => setState(() => _selectedSubTab = index),
+    final buttonContent = Container(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+      decoration: BoxDecoration(
+        color: isSelected ? AppColors.surfaceCard : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-          decoration: BoxDecoration(
-            color: isSelected ? AppColors.surfaceCard : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
-            border: isSelected ? Border.all(color: AppColors.gold, width: 1.2) : null,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 16, color: isSelected ? AppColors.gold : AppColors.textMuted),
-              const SizedBox(width: 6),
-              Flexible(
-                child: Text(
-                  label,
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                    color: isSelected ? AppColors.textPrimary : AppColors.textMuted,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-        ),
+        border: isSelected ? Border.all(color: AppColors.gold, width: 1.2) : null,
       ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 16, color: isSelected ? AppColors.gold : AppColors.textMuted),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              label,
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected ? AppColors.textPrimary : AppColors.textMuted,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+
+    final interactiveButton = InkWell(
+      onTap: () => setState(() => _selectedSubTab = index),
+      borderRadius: BorderRadius.circular(8),
+      child: buttonContent,
+    );
+
+    if (tooltipMessage != null) {
+      return Expanded(
+        child: AppTooltip(
+          message: tooltipMessage,
+          showIcon: false,
+          child: interactiveButton,
+        ),
+      );
+    }
+
+    return Expanded(
+      child: interactiveButton,
     );
   }
 

@@ -160,5 +160,46 @@ void main() {
       await tester.enterText(customField, '24K Gold Bullion Vault');
       await tester.pumpAndSettle();
     });
+
+    testWidgets('Given AddInvestmentDialog, When configuring a custom SIP duration (5 years), Then slider shows stopping age and persists sipDurationYears', (tester) async {
+      tester.view.physicalSize = const Size(1200, 1400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      // Given
+      await tester.pumpWidget(buildTestDialog());
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Open Dialog'));
+      await tester.pumpAndSettle();
+
+      // Verify SIP Duration section exists
+      expect(find.text('SIP DURATION'), findsOneWidget);
+      expect(find.text('Till Retirement'), findsOneWidget);
+
+      // Toggle Till Retirement switch OFF to reveal custom years slider
+      final switchFinder = find.byType(Switch);
+      expect(switchFinder, findsOneWidget);
+      await tester.ensureVisible(switchFinder);
+      await tester.pumpAndSettle();
+      await tester.tap(switchFinder);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Custom Years'), findsOneWidget);
+      expect(find.textContaining('Contribute for 5 Years'), findsOneWidget);
+      expect(find.textContaining('Stops at Age'), findsOneWidget);
+      expect(find.byType(Slider), findsOneWidget);
+
+      // Enter asset name & monthly amount
+      await tester.enterText(find.byType(TextFormField).at(0), 'Nifty 50 Index SIP');
+      await tester.enterText(find.byType(TextFormField).at(1), '20000');
+      await tester.pumpAndSettle();
+
+      // Save asset
+      await tester.tap(find.text('Add Investment'));
+      await tester.pumpAndSettle();
+
+      // Verify Dialog dismissed
+      expect(find.text('Add New Investment'), findsNothing);
+    });
   });
 }

@@ -544,6 +544,47 @@ void main() {
         expect(withMilestone.retirementHorizonYears, greaterThan(0));
       });
     });
+
+    group('SIP Duration & Horizon Capping Tests', () {
+      test('Given 10,000 monthly SIP with 5-year duration evaluated at 10 years at 12% CAGR, When calculated, Then stops deposits at yr 5 and compounds balance as lump sum for remaining 5 yrs', () {
+        final fv5Yr = FinancialCalculator.calculateSipFutureValue(
+          monthlyAmount: 10000.0,
+          annualCagrPercent: 12.0,
+          years: 5.0,
+        );
+
+        final expectedFvAt10 = FinancialCalculator.calculateLumpSumFutureValue(
+          currentValue: fv5Yr,
+          annualCagrPercent: 12.0,
+          years: 5.0,
+        );
+
+        final actualFvAt10 = FinancialCalculator.calculateSipFutureValue(
+          monthlyAmount: 10000.0,
+          annualCagrPercent: 12.0,
+          years: 10.0,
+          maxDurationYears: 5.0,
+        );
+
+        expect(actualFvAt10, closeTo(expectedFvAt10, 0.01));
+      });
+
+      test('Given 10,000 monthly SIP with 5-year duration, When total capital invested is evaluated at 10 years, Then caps invested capital at 5 years (6 Lakhs)', () {
+        final investedAt5 = FinancialCalculator.calculateTotalSipCapitalInvested(
+          monthlyAmount: 10000.0,
+          years: 5.0,
+        );
+
+        final investedAt10Capped = FinancialCalculator.calculateTotalSipCapitalInvested(
+          monthlyAmount: 10000.0,
+          years: 10.0,
+          maxDurationYears: 5.0,
+        );
+
+        expect(investedAt5, equals(600000.0));
+        expect(investedAt10Capped, equals(600000.0));
+      });
+    });
   });
 }
 

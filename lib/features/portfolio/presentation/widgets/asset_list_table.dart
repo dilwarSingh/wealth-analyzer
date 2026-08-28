@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_typography.dart';
 import '../../../../core/utils/currency_formatter.dart';
+import '../../../../core/widgets/app_tooltip.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../domain/entities/investment_asset.dart';
 import '../viewmodels/currency_viewmodel.dart';
@@ -141,40 +142,64 @@ class AssetListTable extends ConsumerWidget {
           columnSpacing: 16,
           columns: [
             DataColumn(
-              label: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Checkbox(
-                    value: allIncluded ? true : (noneIncluded ? false : null),
-                    tristate: true,
-                    activeColor: AppColors.gold,
-                    checkColor: AppColors.canvas,
-                    onChanged: (val) {
-                      ref.read(portfolioProvider.notifier).toggleAllAssetsInclusion(val == true);
-                    },
-                  ),
-                  const Text('INC', style: TextStyle(color: AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.w700)),
-                ],
+              label: AppTooltip(
+                message: 'Toggle to include or exclude this asset from all portfolio forecasts and FIRE calculations.',
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Checkbox(
+                      value: allIncluded ? true : (noneIncluded ? false : null),
+                      tristate: true,
+                      activeColor: AppColors.gold,
+                      checkColor: AppColors.canvas,
+                      onChanged: (val) {
+                        ref.read(portfolioProvider.notifier).toggleAllAssetsInclusion(val == true);
+                      },
+                    ),
+                    const Text('INC', style: TextStyle(color: AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.w700)),
+                  ],
+                ),
               ),
             ),
-            const DataColumn(label: Text('ASSET / CATEGORY', style: TextStyle(color: AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.w700))),
-            const DataColumn(label: Text('TYPE', style: TextStyle(color: AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.w700))),
-            const DataColumn(label: Text('INVESTED CAPITAL', style: TextStyle(color: AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.w700))),
-            const DataColumn(label: Text('CURRENT VALUATION', style: TextStyle(color: AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.w700))),
-            const DataColumn(label: Text('EXP. CAGR', style: TextStyle(color: AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.w700))),
-            const DataColumn(label: Text('RETURNS (%)', style: TextStyle(color: AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.w700))),
-            const DataColumn(label: Text('ACTIONS', style: TextStyle(color: AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.w700))),
+            const DataColumn(
+              label: AppTooltip(
+                message: 'Asset name and underlying asset classification / subcategory.',
+                child: Text('ASSET / CATEGORY', style: TextStyle(color: AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.w700)),
+              ),
+            ),
+            const DataColumn(
+              label: AppTooltip(
+                message: 'Investment mode (Monthly SIP with step-up & duration or Lump Sum).',
+                child: Text('TYPE', style: TextStyle(color: AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.w700)),
+              ),
+            ),
+            const DataColumn(
+              label: AppTooltip(
+                message: 'Total out-of-pocket capital invested (or monthly SIP commitment).',
+                child: Text('INVESTED CAPITAL', style: TextStyle(color: AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.w700)),
+              ),
+            ),
+            const DataColumn(
+              label: AppTooltip(
+                message: 'Current market value of this investment holding.',
+                child: Text('CURRENT VALUATION', style: TextStyle(color: AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.w700)),
+              ),
+            ),
+            const DataColumn(
+              label: AppTooltip(
+                message: 'Expected Compounded Annual Growth Rate used for forward wealth projections.',
+                child: Text('EXP. CAGR', style: TextStyle(color: AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.w700)),
+              ),
+            ),
+            const DataColumn(
+              label: AppTooltip(
+                message: 'Modify holding details or remove asset from portfolio.',
+                child: Text('ACTIONS', style: TextStyle(color: AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.w700)),
+              ),
+            ),
           ],
           rows: assets.map((asset) {
             final isIncluded = asset.isIncluded;
-            final isNeutral = asset.isSip && asset.currentValue == 0;
-            final isGain = asset.unrealizedGain > 0;
-            final returnColor = !isIncluded
-                ? AppColors.textDisabled
-                : (isNeutral
-                    ? AppColors.textMuted
-                    : (isGain ? AppColors.profit : (asset.unrealizedGain < 0 ? AppColors.loss : AppColors.textSecondary)));
-
             final textColor = isIncluded ? AppColors.textPrimary : AppColors.textDisabled;
             final secondaryTextColor = isIncluded ? AppColors.textSecondary : AppColors.textDisabled;
             final valuationColor = isIncluded ? AppColors.goldLight : AppColors.textDisabled;
@@ -240,23 +265,42 @@ class AssetListTable extends ConsumerWidget {
                 DataCell(
                   Opacity(
                     opacity: isIncluded ? 1.0 : 0.45,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: asset.isSip ? AppColors.crimson.withOpacity(0.12) : AppColors.surfaceLight,
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(
-                          color: asset.isSip ? AppColors.crimson.withOpacity(0.4) : AppColors.border,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: asset.isSip ? AppColors.crimson.withOpacity(0.12) : AppColors.surfaceLight,
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: asset.isSip ? AppColors.crimson.withOpacity(0.4) : AppColors.border,
+                            ),
+                          ),
+                          child: Text(
+                            asset.isSip ? 'SIP (${asset.stepUpRate.toStringAsFixed(0)}% Step)' : 'Lump Sum',
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: isIncluded ? (asset.isSip ? AppColors.crimson : AppColors.textSecondary) : AppColors.textDisabled,
+                            ),
+                          ),
                         ),
-                      ),
-                      child: Text(
-                        asset.isSip ? 'SIP (${asset.stepUpRate.toStringAsFixed(0)}% Step)' : 'Lump Sum',
-                        style: GoogleFonts.inter(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: isIncluded ? (asset.isSip ? AppColors.crimson : AppColors.textSecondary) : AppColors.textDisabled,
-                        ),
-                      ),
+                        if (asset.isSip) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            asset.sipDurationYears != null && asset.sipDurationYears! > 0
+                                ? '⏳ ${asset.sipDurationYears} Yrs'
+                                : '⏳ Till Ret.',
+                            style: GoogleFonts.inter(
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w600,
+                              color: isIncluded ? AppColors.goldLight : AppColors.textDisabled,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                 ),
@@ -292,17 +336,6 @@ class AssetListTable extends ConsumerWidget {
                     child: Text(
                       '${asset.expectedCAGR.toStringAsFixed(1)}%',
                       style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: secondaryTextColor),
-                    ),
-                  ),
-                ),
-                DataCell(
-                  Opacity(
-                    opacity: isIncluded ? 1.0 : 0.45,
-                    child: Text(
-                      asset.isSip && asset.currentValue == 0
-                          ? '—'
-                          : CurrencyFormatter.formatPercent(asset.returnPercentage),
-                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: returnColor),
                     ),
                   ),
                 ),
@@ -436,6 +469,52 @@ class AssetListTable extends ConsumerWidget {
                         ),
                       ],
                     ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: asset.isSip ? AppColors.crimson.withOpacity(0.12) : AppColors.surfaceLight,
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(
+                          color: asset.isSip ? AppColors.crimson.withOpacity(0.4) : AppColors.border,
+                        ),
+                      ),
+                      child: Text(
+                        asset.isSip
+                            ? 'SIP (${CurrencyFormatter.formatCompact(asset.investedAmount, currency: currency)}/mo)'
+                            : 'Lump Sum (${CurrencyFormatter.formatCompact(asset.investedAmount, currency: currency)})',
+                        style: GoogleFonts.inter(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w600,
+                          color: isIncluded ? (asset.isSip ? AppColors.crimson : AppColors.textSecondary) : AppColors.textDisabled,
+                        ),
+                      ),
+                    ),
+                    if (asset.isSip)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.gold.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: AppColors.gold.withOpacity(0.4)),
+                        ),
+                        child: Text(
+                          asset.sipDurationYears != null && asset.sipDurationYears! > 0
+                              ? '⏳ ${asset.sipDurationYears} Yrs Duration'
+                              : '⏳ Till Retirement',
+                          style: GoogleFonts.inter(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w600,
+                            color: isIncluded ? AppColors.goldLight : AppColors.textDisabled,
+                          ),
+                        ),
+                      ),
                   ],
                 ),
                 const SizedBox(height: 8),

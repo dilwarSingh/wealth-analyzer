@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_typography.dart';
 import '../../../../core/utils/currency_formatter.dart';
+import '../../../../core/widgets/app_tooltip.dart';
 import '../../../../core/widgets/custom_slider.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../domain/entities/fire_models.dart';
@@ -95,11 +96,15 @@ class _FireCalculatorCardState extends ConsumerState<FireCalculatorCard> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                'FIRE & FREEDOM CALCULATOR',
-                                style: AppTypography.heading3.copyWith(fontSize: 16),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                              AppTooltip(
+                                message: 'Comprehensive Financial Independence calculation engine forecasting multi-tier FIRE targets and crossover timelines.',
+                                iconColor: AppColors.gold,
+                                child: Text(
+                                  'FIRE & FREEDOM CALCULATOR',
+                                  style: AppTypography.heading3.copyWith(fontSize: 16),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
                               const SizedBox(height: 2),
                               Text(
@@ -158,11 +163,15 @@ class _FireCalculatorCardState extends ConsumerState<FireCalculatorCard> {
                   const Icon(Icons.grid_view_rounded, size: 18, color: AppColors.gold),
                   const SizedBox(width: 8),
                   Flexible(
-                    child: Text(
-                      'MULTI-FIRE TARGET MILESTONES',
-                      style: AppTypography.heading3.copyWith(fontSize: 14),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    child: AppTooltip(
+                      message: 'Different variations of Financial Independence catering to varying lifestyle expense needs, semi-retirement, or pure passive compounding.',
+                      iconColor: AppColors.gold,
+                      child: Text(
+                        'MULTI-FIRE TARGET MILESTONES',
+                        style: AppTypography.heading3.copyWith(fontSize: 14),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ),
                 ],
@@ -1430,11 +1439,15 @@ class _FireCalculatorCardState extends ConsumerState<FireCalculatorCard> {
                     Icon(icon, size: 15, color: color),
                     const SizedBox(width: 6),
                     Flexible(
-                      child: Text(
-                        flavor.title,
-                        style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      child: AppTooltip(
+                        message: flavor.description,
+                        iconColor: color,
+                        child: Text(
+                          flavor.title,
+                          style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ),
                   ],

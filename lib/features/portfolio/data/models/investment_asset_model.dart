@@ -12,6 +12,7 @@ class InvestmentAssetModel {
   final String startDate;
   final double expectedCAGR;
   final double stepUpRate;
+  final int? sipDurationYears;
   final bool isIncluded;
 
   const InvestmentAssetModel({
@@ -25,6 +26,7 @@ class InvestmentAssetModel {
     required this.startDate,
     required this.expectedCAGR,
     this.stepUpRate = 0.0,
+    this.sipDurationYears,
     this.isIncluded = true,
   });
 
@@ -40,6 +42,7 @@ class InvestmentAssetModel {
       startDate: entity.startDate.toIso8601String(),
       expectedCAGR: entity.expectedCAGR,
       stepUpRate: entity.stepUpRate,
+      sipDurationYears: entity.sipDurationYears,
       isIncluded: entity.isIncluded,
     );
   }
@@ -56,6 +59,7 @@ class InvestmentAssetModel {
       startDate: DateTime.tryParse(startDate) ?? DateTime.now(),
       expectedCAGR: expectedCAGR,
       stepUpRate: stepUpRate,
+      sipDurationYears: sipDurationYears,
       isIncluded: isIncluded,
     );
   }
@@ -72,6 +76,7 @@ class InvestmentAssetModel {
       'startDate': startDate,
       'expectedCAGR': expectedCAGR,
       'stepUpRate': stepUpRate,
+      if (sipDurationYears != null) 'sipDurationYears': sipDurationYears,
       'isIncluded': isIncluded,
     };
   }
@@ -88,6 +93,7 @@ class InvestmentAssetModel {
       startDate: json['startDate'] as String? ?? DateTime.now().toIso8601String(),
       expectedCAGR: (json['expectedCAGR'] as num?)?.toDouble() ?? 10.0,
       stepUpRate: (json['stepUpRate'] as num?)?.toDouble() ?? 0.0,
+      sipDurationYears: json['sipDurationYears'] as int?,
       isIncluded: json['isIncluded'] as bool? ?? true,
     );
   }

@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_typography.dart';
 import '../../../../core/utils/currency_formatter.dart';
+import '../../../../core/widgets/app_tooltip.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../viewmodels/currency_viewmodel.dart';
 import '../viewmodels/projection_viewmodel.dart';
@@ -42,11 +43,15 @@ class NetWorthAreaChart extends ConsumerWidget {
                   const Icon(Icons.show_chart_rounded, size: 20, color: AppColors.gold),
                   const SizedBox(width: 8),
                   Flexible(
-                    child: Text(
-                      'NET WORTH TRAJECTORY',
-                      style: AppTypography.heading3.copyWith(fontSize: 16),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    child: AppTooltip(
+                      message: 'Visual forward trajectory of your total wealth over time based on asset CAGRs and monthly SIPs.',
+                      iconColor: AppColors.gold,
+                      child: Text(
+                        'NET WORTH TRAJECTORY',
+                        style: AppTypography.heading3.copyWith(fontSize: 16),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ),
                 ],

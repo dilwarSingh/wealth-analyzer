@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_typography.dart';
 import '../../../../core/utils/currency_formatter.dart';
+import '../../../../core/widgets/app_tooltip.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../domain/entities/asset_category.dart';
 import '../viewmodels/currency_viewmodel.dart';
@@ -47,7 +48,11 @@ class _DonutAllocationChartState extends ConsumerState<DonutAllocationChart> {
                 children: [
                   const Icon(Icons.pie_chart_outline_rounded, size: 20, color: AppColors.gold),
                   const SizedBox(width: 8),
-                  Text('ASSET ALLOCATION', style: AppTypography.heading3.copyWith(fontSize: 16)),
+                  AppTooltip(
+                    message: 'Visual breakdown of your total net worth and capital distribution across major asset classes.',
+                    iconColor: AppColors.gold,
+                    child: Text('ASSET ALLOCATION', style: AppTypography.heading3.copyWith(fontSize: 16)),
+                  ),
                 ],
               ),
               Text(
@@ -96,55 +101,59 @@ class _DonutAllocationChartState extends ConsumerState<DonutAllocationChart> {
                     ),
                   ),
                   // Center Info
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        _touchedIndex >= 0 && _touchedIndex < categoriesWithValues.length
-                            ? categoriesWithValues[_touchedIndex].key.label
-                            : (summary.totalNetWorth > 0 ? 'TOTAL NET WORTH' : 'MONTHLY INFLOW'),
-                        style: GoogleFonts.inter(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textMuted,
-                          letterSpacing: 0.5,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _touchedIndex >= 0 && _touchedIndex < categoriesWithValues.length
-                            ? CurrencyFormatter.formatCompact(
-                                categoriesWithValues[_touchedIndex].value,
-                                currency: currency,
-                              )
-                            : (summary.totalNetWorth > 0
-                                ? CurrencyFormatter.formatCompact(
-                                    summary.totalNetWorth,
-                                    currency: currency,
-                                  )
-                                : '${CurrencyFormatter.formatCompact(totalEffective, currency: currency)} / mo'),
-                        style: GoogleFonts.outfit(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: _touchedIndex >= 0 && _touchedIndex < categoriesWithValues.length
-                              ? categoriesWithValues[_touchedIndex].key.color
-                              : AppColors.goldLight,
-                        ),
-                      ),
-                      if (_touchedIndex >= 0 &&
-                          _touchedIndex < categoriesWithValues.length &&
-                          totalEffective > 0)
+                  AppTooltip(
+                    message: 'Aggregated total portfolio net worth across active holdings. Hover or tap any slice to inspect category amount and percentage.',
+                    showIcon: false,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
                         Text(
-                          '${((categoriesWithValues[_touchedIndex].value / totalEffective) * 100).toStringAsFixed(1)}%',
+                          _touchedIndex >= 0 && _touchedIndex < categoriesWithValues.length
+                              ? categoriesWithValues[_touchedIndex].key.label
+                              : (summary.totalNetWorth > 0 ? 'TOTAL NET WORTH' : 'MONTHLY INFLOW'),
                           style: GoogleFonts.inter(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textSecondary,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textMuted,
+                            letterSpacing: 0.5,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _touchedIndex >= 0 && _touchedIndex < categoriesWithValues.length
+                              ? CurrencyFormatter.formatCompact(
+                                  categoriesWithValues[_touchedIndex].value,
+                                  currency: currency,
+                                )
+                              : (summary.totalNetWorth > 0
+                                  ? CurrencyFormatter.formatCompact(
+                                      summary.totalNetWorth,
+                                      currency: currency,
+                                    )
+                                  : '${CurrencyFormatter.formatCompact(totalEffective, currency: currency)} / mo'),
+                          style: GoogleFonts.outfit(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: _touchedIndex >= 0 && _touchedIndex < categoriesWithValues.length
+                                ? categoriesWithValues[_touchedIndex].key.color
+                                : AppColors.goldLight,
                           ),
                         ),
-                    ],
+                        if (_touchedIndex >= 0 &&
+                            _touchedIndex < categoriesWithValues.length &&
+                            totalEffective > 0)
+                          Text(
+                            '${((categoriesWithValues[_touchedIndex].value / totalEffective) * 100).toStringAsFixed(1)}%',
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ],
               ),

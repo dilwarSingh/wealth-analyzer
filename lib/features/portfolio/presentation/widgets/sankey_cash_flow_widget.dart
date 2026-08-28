@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_typography.dart';
 import '../../../../core/utils/currency_formatter.dart';
+import '../../../../core/widgets/app_tooltip.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../domain/entities/cash_flow_node.dart';
 import '../viewmodels/currency_viewmodel.dart';
@@ -41,30 +42,38 @@ class _SankeyCashFlowWidgetState extends ConsumerState<SankeyCashFlowWidget> {
                     const Icon(Icons.alt_route_rounded, size: 20, color: AppColors.crimson),
                     const SizedBox(width: 8),
                     Flexible(
-                      child: Text(
-                        'CASH-FLOW SANKEY',
-                        style: AppTypography.heading3.copyWith(fontSize: 16),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      child: AppTooltip(
+                        message: 'Visual routing map showing how your monthly income flows into living expenses, SIP asset allocations, and surplus liquidity.',
+                        iconColor: AppColors.crimson,
+                        child: Text(
+                          'CASH-FLOW SANKEY',
+                          style: AppTypography.heading3.copyWith(fontSize: 16),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
               const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceLight,
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: Text(
-                  'Inflow: ${CurrencyFormatter.formatCompact(sankeyData.totalMonthlyInflow, currency: currency)} / mo',
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.goldLight,
+              AppTooltip(
+                message: 'Aggregated total monthly systematic investment inflow routing through your financial buckets.',
+                showIcon: false,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceLight,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Text(
+                    'Inflow: ${CurrencyFormatter.formatCompact(sankeyData.totalMonthlyInflow, currency: currency)} / mo',
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.goldLight,
+                    ),
                   ),
                 ),
               ),

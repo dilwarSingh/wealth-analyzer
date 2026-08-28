@@ -29,6 +29,7 @@ class InvestmentAsset {
   final DateTime startDate;
   final double expectedCAGR;
   final double stepUpRate;
+  final int? sipDurationYears;
   final bool isIncluded;
 
   const InvestmentAsset({
@@ -42,6 +43,7 @@ class InvestmentAsset {
     required this.startDate,
     required this.expectedCAGR,
     this.stepUpRate = 0.0,
+    this.sipDurationYears,
     this.isIncluded = true,
   });
 
@@ -78,11 +80,15 @@ class InvestmentAsset {
       );
     } else {
       // Monthly SIP starting with current valuation as baseline + ongoing SIP
+      final maxDuration = (sipDurationYears != null && sipDurationYears! > 0)
+          ? sipDurationYears!.toDouble()
+          : null;
       final ongoingSipFv = FinancialCalculator.calculateSipFutureValue(
         monthlyAmount: investedAmount,
         annualCagrPercent: expectedCAGR,
         years: years,
         stepUpPercent: effectiveStepUp,
+        maxDurationYears: maxDuration,
       );
       final existingCapitalGrowth = currentValue > 0
           ? FinancialCalculator.calculateLumpSumFutureValue(
@@ -109,6 +115,8 @@ class InvestmentAsset {
     DateTime? startDate,
     double? expectedCAGR,
     double? stepUpRate,
+    int? sipDurationYears,
+    bool clearSipDuration = false,
     bool? isIncluded,
   }) {
     return InvestmentAsset(
@@ -122,6 +130,7 @@ class InvestmentAsset {
       startDate: startDate ?? this.startDate,
       expectedCAGR: expectedCAGR ?? this.expectedCAGR,
       stepUpRate: stepUpRate ?? this.stepUpRate,
+      sipDurationYears: clearSipDuration ? null : (sipDurationYears ?? this.sipDurationYears),
       isIncluded: isIncluded ?? this.isIncluded,
     );
   }
