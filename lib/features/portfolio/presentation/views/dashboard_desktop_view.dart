@@ -1,5 +1,7 @@
+import 'package:ai/ai.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../adapters/wealth_ai_adapter.dart';
 import '../viewmodels/portfolio_viewmodel.dart';
 import '../widgets/asset_list_table.dart';
 import '../widgets/donut_allocation_chart.dart';
@@ -13,13 +15,36 @@ import '../widgets/swp_simulator_card.dart';
 
 class DashboardDesktopView extends ConsumerWidget {
   final int selectedTabIndex;
+  final ValueChanged<int>? onTabSelected;
 
-  const DashboardDesktopView({super.key, required this.selectedTabIndex});
+  const DashboardDesktopView({
+    super.key,
+    required this.selectedTabIndex,
+    this.onTabSelected,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final portfolioState = ref.watch(portfolioProvider);
+    final snapshot = ref.watch(aiPortfolioSnapshotProvider);
     final hasAssets = portfolioState.assets.isNotEmpty;
+    final adapter = WealthAIAdapter(ref);
+
+    // If Tab 4 (AI Advisor) is selected, render full-screen Copilot
+    if (selectedTabIndex == 4) {
+      return Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1200),
+          child: AIScreen(
+            snapshot: snapshot,
+            theme: WealthAIAdapter.getThemeData(),
+            currencyDelegate: adapter,
+            actionDelegate: adapter,
+            mathDelegate: adapter,
+          ),
+        ),
+      );
+    }
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
@@ -29,6 +54,18 @@ class DashboardDesktopView extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // AI Quick Insights Trigger Bar
+              AIQuickInsightsBar(
+                theme: WealthAIAdapter.getThemeData(),
+                onPromptTriggered: (prompt) {
+                  if (onTabSelected != null) onTabSelected!(4);
+                },
+                onOpenCopilot: () {
+                  if (onTabSelected != null) onTabSelected!(4);
+                },
+              ),
+              const SizedBox(height: 16),
+
               // Top KPI Ribbon
               const KpiRibbon(),
               const SizedBox(height: 24),

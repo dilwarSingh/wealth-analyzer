@@ -71,7 +71,10 @@ class _WealthDashboardScreenState extends ConsumerState<WealthDashboardScreen> {
                 // Responsive Body
                 Expanded(
                   child: ResponsiveBuilder(
-                    desktop: DashboardDesktopView(selectedTabIndex: _selectedTabIndex),
+                    desktop: DashboardDesktopView(
+                      selectedTabIndex: _selectedTabIndex,
+                      onTabSelected: (index) => setState(() => _selectedTabIndex = index),
+                    ),
                     mobile: DashboardMobileView(
                       selectedTabIndex: _selectedTabIndex,
                       onTabSelected: (index) => setState(() => _selectedTabIndex = index),

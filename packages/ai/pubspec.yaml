@@ -1,0 +1,31 @@
+name: ai
+description: "Platform and model-agnostic AI subsystem for Wealth Analyzer with structured outputs and Generative Flutter UI."
+version: 1.0.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.13.1
+  flutter: ">=3.16.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^2.6.1
+  ai_sdk_dart: ^2.0.0
+  ai_sdk_openai: ^2.0.0
+  ai_sdk_google: ^2.0.0
+  ai_sdk_anthropic: ^2.0.0
+  ai_sdk_ollama: ^2.0.0
+  fl_chart: ^1.2.0
+  flutter_animate: ^4.5.2
+  google_fonts: ^8.2.1
+  intl: ^0.20.3
+  uuid: ^4.6.0
+  file_picker: ^8.1.7
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
