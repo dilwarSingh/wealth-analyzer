@@ -113,7 +113,7 @@ class _GenBatchImportCardState extends State<GenBatchImportCard> {
             child: ListView.separated(
               shrinkWrap: true,
               itemCount: payload.extractedAssets.length,
-              separatorBuilder: (_, __) => Divider(color: theme.borderColor.withOpacity(0.2), height: 1),
+              separatorBuilder: (context, index) => Divider(color: theme.borderColor.withOpacity(0.2), height: 1),
               itemBuilder: (ctx, i) {
                 final asset = payload.extractedAssets[i];
                 final isSelected = _selectedIds.contains(asset.id);

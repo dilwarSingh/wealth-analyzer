@@ -80,14 +80,14 @@ class KpiMetricPayload extends GenerativeUIPayload {
   final String? trendLabel;
 
   const KpiMetricPayload({
-    required String widgetId,
+    required super.widgetId,
     required this.title,
     required this.value,
     this.subtitle,
     this.changePercent,
     this.isPositive = true,
     this.trendLabel,
-  }) : super(type: GenerativeWidgetType.kpiMetric, widgetId: widgetId);
+  }) : super(type: GenerativeWidgetType.kpiMetric);
 
   @override
   Map<String, dynamic> toJson() => {
@@ -143,11 +143,11 @@ class AllocationChartPayload extends GenerativeUIPayload {
   final String currencySymbol;
 
   const AllocationChartPayload({
-    required String widgetId,
+    required super.widgetId,
     required this.slices,
     required this.totalAmount,
     this.currencySymbol = '₹',
-  }) : super(type: GenerativeWidgetType.allocationChart, widgetId: widgetId);
+  }) : super(type: GenerativeWidgetType.allocationChart);
 
   @override
   Map<String, dynamic> toJson() => {
@@ -182,7 +182,7 @@ class GoalRebalancePayload extends GenerativeUIPayload {
   final String? appliedTimestamp;
 
   const GoalRebalancePayload({
-    required String widgetId,
+    required super.widgetId,
     required this.goalName,
     this.targetAmount = 0.0,
     this.targetYears = 10,
@@ -193,7 +193,7 @@ class GoalRebalancePayload extends GenerativeUIPayload {
     this.taxTips = '',
     this.isApplied = false,
     this.appliedTimestamp,
-  }) : super(type: GenerativeWidgetType.goalRebalance, widgetId: widgetId);
+  }) : super(type: GenerativeWidgetType.goalRebalance);
 
   GoalRebalancePayload copyWithApplied() => GoalRebalancePayload(
     widgetId: widgetId,
@@ -253,13 +253,13 @@ class ProjectionChartPayload extends GenerativeUIPayload {
   final String currencySymbol;
 
   const ProjectionChartPayload({
-    required String widgetId,
+    required super.widgetId,
     required this.years,
     required this.baselineCurve,
     this.optimisticCurve,
     this.pessimisticCurve,
     this.currencySymbol = '₹',
-  }) : super(type: GenerativeWidgetType.projectionChart, widgetId: widgetId);
+  }) : super(type: GenerativeWidgetType.projectionChart);
 
   @override
   Map<String, dynamic> toJson() => {
@@ -293,7 +293,7 @@ class MonteCarloCurvePayload extends GenerativeUIPayload {
   final String currencySymbol;
 
   const MonteCarloCurvePayload({
-    required String widgetId,
+    required super.widgetId,
     required this.probabilityOfSuccess,
     required this.years,
     required this.p10Curve,
@@ -301,7 +301,7 @@ class MonteCarloCurvePayload extends GenerativeUIPayload {
     required this.p90Curve,
     this.simulationsCount = 1000,
     this.currencySymbol = '₹',
-  }) : super(type: GenerativeWidgetType.monteCarloCurve, widgetId: widgetId);
+  }) : super(type: GenerativeWidgetType.monteCarloCurve);
 
   @override
   Map<String, dynamic> toJson() => {
@@ -367,11 +367,11 @@ class StressTestResultPayload extends GenerativeUIPayload {
   final String commentary;
 
   const StressTestResultPayload({
-    required String widgetId,
+    required super.widgetId,
     required this.scenarios,
     required this.overallResilienceScore,
     this.commentary = '',
-  }) : super(type: GenerativeWidgetType.stressTestResult, widgetId: widgetId);
+  }) : super(type: GenerativeWidgetType.stressTestResult);
 
   @override
   Map<String, dynamic> toJson() => {
@@ -404,7 +404,7 @@ class ActionConfirmationPayload extends GenerativeUIPayload {
   final String? appliedTimestamp;
 
   const ActionConfirmationPayload({
-    required String widgetId,
+    required super.widgetId,
     required this.actionId,
     required this.actionType,
     required this.title,
@@ -413,7 +413,7 @@ class ActionConfirmationPayload extends GenerativeUIPayload {
     this.rebalanceDeltas,
     this.isApplied = false,
     this.appliedTimestamp,
-  }) : super(type: GenerativeWidgetType.actionConfirmation, widgetId: widgetId);
+  }) : super(type: GenerativeWidgetType.actionConfirmation);
 
   ActionConfirmationPayload copyWithApplied() => ActionConfirmationPayload(
     widgetId: widgetId,
@@ -467,13 +467,13 @@ class BatchAssetImportPayload extends GenerativeUIPayload {
   final String? importedTimestamp;
 
   const BatchAssetImportPayload({
-    required String widgetId,
+    required super.widgetId,
     required this.importId,
     required this.sourceDescription,
     required this.extractedAssets,
     this.isImported = false,
     this.importedTimestamp,
-  }) : super(type: GenerativeWidgetType.batchAssetImport, widgetId: widgetId);
+  }) : super(type: GenerativeWidgetType.batchAssetImport);
 
   BatchAssetImportPayload copyWithImported() => BatchAssetImportPayload(
     widgetId: widgetId,
@@ -517,14 +517,14 @@ class ScenarioSimulatorPayload extends GenerativeUIPayload {
   final String currencySymbol;
 
   const ScenarioSimulatorPayload({
-    required String widgetId,
+    required super.widgetId,
     required this.initialNetWorth,
     required this.defaultAnnualSavings,
     this.defaultExpectedReturn = 12.0,
     this.defaultInflationRate = 6.0,
     this.defaultYears = 15,
     this.currencySymbol = '₹',
-  }) : super(type: GenerativeWidgetType.scenarioSimulator, widgetId: widgetId);
+  }) : super(type: GenerativeWidgetType.scenarioSimulator);
 
   @override
   Map<String, dynamic> toJson() => {
@@ -559,14 +559,14 @@ class SwpCashFlowPayload extends GenerativeUIPayload {
   final String currencySymbol;
 
   const SwpCashFlowPayload({
-    required String widgetId,
+    required super.widgetId,
     required this.initialCorpus,
     required this.annualWithdrawal,
     this.depletionYear,
     this.isPerpetual = true,
     required this.remainingCorpusOverTime,
     this.currencySymbol = '₹',
-  }) : super(type: GenerativeWidgetType.swpCashFlow, widgetId: widgetId);
+  }) : super(type: GenerativeWidgetType.swpCashFlow);
 
   @override
   Map<String, dynamic> toJson() => {
@@ -601,14 +601,14 @@ class AuditReportPayload extends GenerativeUIPayload {
   final String rawMarkdown;
 
   const AuditReportPayload({
-    required String widgetId,
+    required super.widgetId,
     required this.healthScore,
     required this.summary,
     required this.strengths,
     required this.risks,
     required this.actionPlan,
     required this.rawMarkdown,
-  }) : super(type: GenerativeWidgetType.auditReport, widgetId: widgetId);
+  }) : super(type: GenerativeWidgetType.auditReport);
 
   @override
   Map<String, dynamic> toJson() => {

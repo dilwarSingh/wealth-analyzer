@@ -25,7 +25,7 @@ typedef StreamUpdateCallback = void Function({
   GenerativeUIPayload? newWidget,
 });
 
-/// Streaming parser for capturing token streams, thinking blocks (<think>...</think>), and native reasoning deltas
+/// Streaming parser for capturing token streams, thinking blocks (`<think>...</think>`), and native reasoning deltas
 class StreamingThinkingParser {
   final void Function({
     required String textDelta,

@@ -62,7 +62,6 @@ class _AIDataSharingDialogState extends ConsumerState<AIDataSharingDialog> {
   late Set<String> _includedCashFlowItems;
   late Set<String> _includedSummaryItems;
   late bool _rememberForFuture;
-  bool _saveAsGlobalDefault = false;
 
   // FIRE Target state
   String _selectedFireTargetType = 'Standard';
@@ -191,7 +190,7 @@ class _AIDataSharingDialogState extends ConsumerState<AIDataSharingDialog> {
       rememberForFutureSessions: _rememberForFuture,
     );
 
-    if (_saveAsGlobalDefault) {
+    if (_rememberForFuture) {
       final globalConfig = ref.read(aiSettingsProvider);
       ref.read(aiSettingsProvider.notifier).updateConfig(
         globalConfig.copyWith(
