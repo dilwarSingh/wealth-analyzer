@@ -486,20 +486,26 @@ class _AIDataSharingDialogState extends ConsumerState<AIDataSharingDialog> {
             title: Row(
               children: [
                 const Text('🔥 ', style: TextStyle(fontSize: 13)),
-                Text(
-                  'FIRE & Retirement Portfolio',
-                  style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w700, color: theme.textPrimaryColor),
-                ),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: theme.secondaryAccentColor.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
+                Expanded(
                   child: Text(
-                    'Target: $targetStr',
-                    style: GoogleFonts.inter(fontSize: 10.5, fontWeight: FontWeight.w600, color: theme.secondaryAccentColor),
+                    'FIRE & Retirement Portfolio',
+                    style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w700, color: theme.textPrimaryColor),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: theme.secondaryAccentColor.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      'Target: $targetStr',
+                      style: GoogleFonts.inter(fontSize: 10.5, fontWeight: FontWeight.w600, color: theme.secondaryAccentColor),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ),
               ],
@@ -790,20 +796,26 @@ class _AIDataSharingDialogState extends ConsumerState<AIDataSharingDialog> {
             title: Row(
               children: [
                 const Text('💵 ', style: TextStyle(fontSize: 13)),
-                Text(
-                  'Cash Flows & Recurring SIPs',
-                  style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w700, color: theme.textPrimaryColor),
-                ),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: theme.secondaryAccentColor.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
+                Expanded(
                   child: Text(
-                    'Active SIPs: ${_formatSip(totalMonthlySips)}',
-                    style: GoogleFonts.inter(fontSize: 10.5, fontWeight: FontWeight.w600, color: theme.secondaryAccentColor),
+                    'Cash Flows & Recurring SIPs',
+                    style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w700, color: theme.textPrimaryColor),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: theme.secondaryAccentColor.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      'Active SIPs: ${_formatSip(totalMonthlySips)}',
+                      style: GoogleFonts.inter(fontSize: 10.5, fontWeight: FontWeight.w600, color: theme.secondaryAccentColor),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ),
               ],
@@ -941,20 +953,26 @@ class _AIDataSharingDialogState extends ConsumerState<AIDataSharingDialog> {
             title: Row(
               children: [
                 const Text('📊 ', style: TextStyle(fontSize: 13)),
-                Text(
-                  'Portfolio Summary & Assumptions',
-                  style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w700, color: theme.textPrimaryColor),
-                ),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: theme.secondaryAccentColor.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
+                Expanded(
                   child: Text(
-                    'Net Worth: ${_formatAssetVal(widget.snapshot.totalNetWorth)}',
-                    style: GoogleFonts.inter(fontSize: 10.5, fontWeight: FontWeight.w600, color: theme.secondaryAccentColor),
+                    'Portfolio Summary & Assumptions',
+                    style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w700, color: theme.textPrimaryColor),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: theme.secondaryAccentColor.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      'Net Worth: ${_formatAssetVal(widget.snapshot.totalNetWorth)}',
+                      style: GoogleFonts.inter(fontSize: 10.5, fontWeight: FontWeight.w600, color: theme.secondaryAccentColor),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ),
               ],
@@ -1163,36 +1181,49 @@ class _AIDataSharingDialogState extends ConsumerState<AIDataSharingDialog> {
                           });
                         },
                       ),
-                      Text(
-                        cat.displayName,
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: isCatActive ? FontWeight.w700 : FontWeight.w500,
-                          color: isCatActive ? theme.textPrimaryColor : theme.textMutedColor,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                        decoration: BoxDecoration(
-                          color: theme.surfaceColor.withOpacity(0.6),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          '$selectedCatCount/$catCount selected',
-                          style: GoogleFonts.inter(fontSize: 10, color: theme.textMutedColor),
-                        ),
-                      ),
-                      const Spacer(),
-                      Text(
-                        'Val: ${_formatAssetVal(catValue)}${catSip > 0 ? '  •  SIP: ${_formatSip(catSip)}' : ''}',
-                        style: GoogleFonts.inter(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w700,
-                          color: isCatActive ? theme.secondaryAccentColor : theme.textMutedColor,
+                      Expanded(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                cat.displayName,
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  fontWeight: isCatActive ? FontWeight.w700 : FontWeight.w500,
+                                  color: isCatActive ? theme.textPrimaryColor : theme.textMutedColor,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                              decoration: BoxDecoration(
+                                color: theme.surfaceColor.withOpacity(0.6),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                '$selectedCatCount/$catCount',
+                                style: GoogleFonts.inter(fontSize: 10, color: theme.textMutedColor),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          'Val: ${_formatAssetVal(catValue)}${catSip > 0 ? ' • SIP: ${_formatSip(catSip)}' : ''}',
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: isCatActive ? theme.secondaryAccentColor : theme.textMutedColor,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
                       Icon(
                         isExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
                         size: 18,
@@ -1284,10 +1315,14 @@ class _AIDataSharingDialogState extends ConsumerState<AIDataSharingDialog> {
                                     ),
                                   ),
                                 ),
-                                const Spacer(),
-                                Text(
-                                  '$selectedSubCount/$subCount items  •  Val: ${_formatAssetVal(subTotal)}${subSip > 0 ? '  •  SIP: ${_formatSip(subSip)}' : ''}',
-                                  style: GoogleFonts.inter(fontSize: 10.5, color: theme.textSecondaryColor),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    '$selectedSubCount/$subCount items • Val: ${_formatAssetVal(subTotal)}${subSip > 0 ? ' • SIP: ${_formatSip(subSip)}' : ''}',
+                                    style: GoogleFonts.inter(fontSize: 10.5, color: theme.textSecondaryColor),
+                                    textAlign: TextAlign.end,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
                               ],
                             ),
@@ -1349,24 +1384,20 @@ class _AIDataSharingDialogState extends ConsumerState<AIDataSharingDialog> {
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
+                                    const SizedBox(width: 6),
                                     // Right-Aligned Val and SIP
-                                    Text(
-                                      'Val: ${_formatAssetVal(a.currentValue)}',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                        color: isSelected ? theme.textPrimaryColor : theme.textMutedColor,
-                                      ),
-                                    ),
-                                    Text(
-                                      a.isSip
-                                          ? '  •  SIP: ${_formatSip(a.monthlySipAmount)}'
-                                          : '  •  One-Time',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 10.5,
-                                        color: isSelected
-                                            ? (a.isSip ? theme.secondaryAccentColor : theme.textSecondaryColor)
-                                            : theme.textMutedColor,
+                                    Flexible(
+                                      child: Text(
+                                        'Val: ${_formatAssetVal(a.currentValue)}${a.isSip ? ' • SIP: ${_formatSip(a.monthlySipAmount)}' : ' • One-Time'}',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 10.5,
+                                          fontWeight: FontWeight.w600,
+                                          color: isSelected
+                                              ? (a.isSip ? theme.secondaryAccentColor : theme.textPrimaryColor)
+                                              : theme.textMutedColor,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                        textAlign: TextAlign.end,
                                       ),
                                     ),
                                   ],

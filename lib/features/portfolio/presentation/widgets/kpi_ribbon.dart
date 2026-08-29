@@ -150,7 +150,7 @@ class KpiRibbon extends ConsumerWidget {
                 children: [
                   Expanded(
                     child: _buildKpiCard(
-                      title: 'MONTHLY SIP',
+                      title: 'SIP INFLOW',
                       value: CurrencyFormatter.formatFull(summary.totalMonthlySipInflow, currency: currency),
                       compactValue: CurrencyFormatter.formatCompact(summary.totalMonthlySipInflow, currency: currency),
                       icon: Icons.repeat_rounded,
@@ -193,16 +193,18 @@ class KpiRibbon extends ConsumerWidget {
     String? tooltipMessage,
     bool isHighlighted = false,
   }) {
-    final titleWidget = Text(
-      title,
-      style: GoogleFonts.inter(
-        fontSize: 11,
-        fontWeight: FontWeight.w700,
-        color: AppColors.textMuted,
-        letterSpacing: 0.8,
+    final titleWidget = FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.centerLeft,
+      child: Text(
+        title,
+        style: GoogleFonts.inter(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: AppColors.textMuted,
+          letterSpacing: 0.5,
+        ),
       ),
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
     );
 
     return GlassContainer(

@@ -1,5 +1,6 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../domain/contracts/ai_portfolio_contract.dart';
@@ -199,158 +200,195 @@ class _AIScreenState extends ConsumerState<AIScreen> {
       theme: theme,
       borderRadius: 0,
       borderWidth: 0,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: Row(
-        children: [
-          // Drawer Trigger
-          IconButton(
-            icon: Icon(Icons.menu_rounded, color: theme.secondaryAccentColor, size: 20),
-            tooltip: 'Chat Threads',
-            onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-          ),
-          const SizedBox(width: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isCompact = constraints.maxWidth < 600;
 
-          // Persona Selector
-          PopupMenuButton<AIPersona>(
-            color: theme.surfaceLightColor,
-            tooltip: 'Switch Advisor Persona',
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            onSelected: (p) => ref.read(aiPersonaProvider.notifier).selectPersona(p),
-            itemBuilder: (ctx) => AIPersona.presets.map((p) {
-              return PopupMenuItem(
-                value: p,
-                child: Row(
-                  children: [
-                    Text(p.icon, style: const TextStyle(fontSize: 16)),
-                    const SizedBox(width: 8),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+          return Row(
+            children: [
+              // Drawer Trigger
+              IconButton(
+                icon: Icon(Icons.menu_rounded, color: theme.secondaryAccentColor, size: 20),
+                tooltip: 'Chat Threads',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+              ),
+              const SizedBox(width: 4),
+
+              // Persona Selector
+              PopupMenuButton<AIPersona>(
+                color: theme.surfaceLightColor,
+                tooltip: 'Switch Advisor Persona',
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                constraints: const BoxConstraints(minWidth: 280, maxWidth: 360),
+                onSelected: (p) => ref.read(aiPersonaProvider.notifier).selectPersona(p),
+                itemBuilder: (ctx) => AIPersona.presets.map((p) {
+                  return PopupMenuItem(
+                    value: p,
+                    child: Row(
                       children: [
-                        Text(p.name, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: theme.textPrimaryColor)),
-                        Text(p.tagline, style: GoogleFonts.inter(fontSize: 10, color: theme.textMutedColor)),
+                        Text(p.icon, style: const TextStyle(fontSize: 16)),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                p.name,
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: theme.textPrimaryColor,
+                                ),
+                              ),
+                              Text(
+                                p.tagline,
+                                style: GoogleFonts.inter(
+                                  fontSize: 10,
+                                  color: theme.textMutedColor,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
-                  ],
-                ),
-              );
-            }).toList(),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: theme.surfaceLightColor.withOpacity(0.6),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: theme.borderColor.withOpacity(0.4)),
-              ),
-              child: Row(
-                children: [
-                  Text(persona.icon, style: const TextStyle(fontSize: 13)),
-                  const SizedBox(width: 6),
-                  Text(
-                    persona.name,
-                    style: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w700, color: theme.textPrimaryColor),
+                  );
+                }).toList(),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: theme.surfaceLightColor.withOpacity(0.6),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: theme.borderColor.withOpacity(0.4)),
                   ),
-                  const SizedBox(width: 4),
-                  Icon(Icons.arrow_drop_down_rounded, color: theme.secondaryAccentColor, size: 16),
-                ],
-              ),
-            ),
-          ),
-          const Spacer(),
-
-          // Privacy Shield Pill
-          InkWell(
-            onTap: () => _openDataSharingDialog(activeSessionId),
-            borderRadius: BorderRadius.circular(16),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: theme.secondaryAccentColor.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: theme.secondaryAccentColor.withOpacity(0.4)),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.shield_outlined, size: 13, color: theme.secondaryAccentColor),
-                  const SizedBox(width: 5),
-                  Text(
-                    privacyLabel,
-                    style: GoogleFonts.inter(
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w700,
-                      color: theme.secondaryAccentColor,
-                    ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(persona.icon, style: const TextStyle(fontSize: 13)),
+                      const SizedBox(width: 4),
+                      Text(
+                        persona.name,
+                        style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: theme.textPrimaryColor),
+                      ),
+                      const SizedBox(width: 2),
+                      Icon(Icons.arrow_drop_down_rounded, color: theme.secondaryAccentColor, size: 16),
+                    ],
                   ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-
-          // Provider Badge
-          InkWell(
-            onTap: () {
-              showDialog(
-                context: context,
-                builder: (ctx) => AISettingsModal(theme: theme),
-              );
-            },
-            borderRadius: BorderRadius.circular(16),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: (config.isConfigured ? theme.successColor : theme.secondaryAccentColor).withOpacity(0.12),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: (config.isConfigured ? theme.successColor : theme.secondaryAccentColor).withOpacity(0.4),
                 ),
               ),
-              child: Row(
-                children: [
-                  Icon(
-                    config.isConfigured ? Icons.cloud_done_rounded : Icons.offline_bolt_rounded,
-                    size: 13,
-                    color: config.isConfigured ? theme.successColor : theme.secondaryAccentColor,
+              const Spacer(),
+
+              // Privacy Shield Pill
+              InkWell(
+                onTap: () => _openDataSharingDialog(activeSessionId),
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: theme.secondaryAccentColor.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: theme.secondaryAccentColor.withOpacity(0.4)),
                   ),
-                  const SizedBox(width: 5),
-                  Text(
-                    config.isConfigured ? config.provider.displayName : 'Offline / Heuristics',
-                    style: GoogleFonts.inter(
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w700,
-                      color: config.isConfigured ? theme.successColor : theme.secondaryAccentColor,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.shield_outlined, size: 13, color: theme.secondaryAccentColor),
+                      const SizedBox(width: 4),
+                      Text(
+                        privacyLabel,
+                        style: GoogleFonts.inter(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: theme.secondaryAccentColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+
+              // Provider Badge (Hidden on compact mobile, visible on desktop)
+              if (!isCompact) ...[
+                InkWell(
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => AISettingsModal(theme: theme),
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: (config.isConfigured ? theme.successColor : theme.secondaryAccentColor).withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: (config.isConfigured ? theme.successColor : theme.secondaryAccentColor).withOpacity(0.4),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          config.isConfigured ? Icons.cloud_done_rounded : Icons.offline_bolt_rounded,
+                          size: 13,
+                          color: config.isConfigured ? theme.successColor : theme.secondaryAccentColor,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          config.isConfigured ? config.provider.displayName : 'Offline / Heuristics',
+                          style: GoogleFonts.inter(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: config.isConfigured ? theme.successColor : theme.secondaryAccentColor,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
+                ),
+                const SizedBox(width: 6),
+              ],
+
+              // 1-Click Instant Audit CTA
+              IconButton(
+                icon: Icon(Icons.bolt_rounded, color: theme.secondaryAccentColor, size: 18),
+                tooltip: 'Instant Wealth Audit',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
+                onPressed: () {
+                  ref.read(aiChatProvider(activeSessionId).notifier).runInstantAudit(
+                    snapshot: widget.snapshot,
+                    currencyDelegate: widget.currencyDelegate,
+                  );
+                  _scrollToBottom();
+                },
               ),
-            ),
-          ),
-          const SizedBox(width: 8),
+              const SizedBox(width: 2),
 
-          // 1-Click Instant Audit CTA
-          IconButton(
-            icon: Icon(Icons.bolt_rounded, color: theme.secondaryAccentColor, size: 20),
-            tooltip: 'Instant Wealth Audit',
-            onPressed: () {
-              ref.read(aiChatProvider(activeSessionId).notifier).runInstantAudit(
-                snapshot: widget.snapshot,
-                currencyDelegate: widget.currencyDelegate,
-              );
-              _scrollToBottom();
-            },
-          ),
-
-          // Settings Button
-          IconButton(
-            icon: Icon(Icons.settings_outlined, color: theme.textSecondaryColor, size: 18),
-            tooltip: 'AI Settings',
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (ctx) => AISettingsModal(theme: theme),
-              );
-            },
-          ),
-        ],
+              // Settings Button
+              IconButton(
+                icon: Icon(Icons.settings_outlined, color: theme.textSecondaryColor, size: 17),
+                tooltip: 'AI Settings',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (ctx) => AISettingsModal(theme: theme),
+                  );
+                },
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -756,18 +794,50 @@ class _AIScreenState extends ConsumerState<AIScreen> {
                 onPressed: () => _pickImage(activeSessionId),
               ),
               Expanded(
-                child: TextField(
-                  controller: _textController,
-                  minLines: 1,
-                  maxLines: 4,
-                  style: GoogleFonts.inter(fontSize: 13, color: theme.textPrimaryColor),
-                  decoration: InputDecoration(
-                    hintText: 'Ask financial question, simulate what-ifs, or audit portfolio...',
-                    hintStyle: GoogleFonts.inter(fontSize: 12.5, color: theme.textMutedColor),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                child: Focus(
+                  onKeyEvent: (node, event) {
+                    if (event is KeyDownEvent) {
+                      final isEnter = event.logicalKey == LogicalKeyboardKey.enter ||
+                          event.logicalKey == LogicalKeyboardKey.numpadEnter;
+                      if (isEnter) {
+                        final isShift = HardwareKeyboard.instance.isShiftPressed;
+                        final isControl = HardwareKeyboard.instance.isControlPressed;
+                        final isAlt = HardwareKeyboard.instance.isAltPressed;
+                        final isMeta = HardwareKeyboard.instance.isMetaPressed;
+
+                        if (isShift || isControl || isAlt || isMeta) {
+                          // Shift/Ctrl/Alt/Meta + Enter: Allow default newline insertion
+                          return KeyEventResult.ignored;
+                        } else {
+                          // Plain Enter: Send message immediately and prevent newline
+                          if (_textController.text.trim().isNotEmpty && !chatState.isStreaming) {
+                            _handleSend();
+                          }
+                          return KeyEventResult.handled;
+                        }
+                      }
+                    }
+                    return KeyEventResult.ignored;
+                  },
+                  child: TextField(
+                    controller: _textController,
+                    minLines: 1,
+                    maxLines: 4,
+                    keyboardType: TextInputType.multiline,
+                    textInputAction: TextInputAction.send,
+                    style: GoogleFonts.inter(fontSize: 13, color: theme.textPrimaryColor),
+                    decoration: InputDecoration(
+                      hintText: 'Ask financial question, simulate what-ifs, or audit portfolio...',
+                      hintStyle: GoogleFonts.inter(fontSize: 12.5, color: theme.textMutedColor),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    ),
+                    onSubmitted: (_) {
+                      if (_textController.text.trim().isNotEmpty && !chatState.isStreaming) {
+                        _handleSend();
+                      }
+                    },
                   ),
-                  onSubmitted: (_) => _handleSend(),
                 ),
               ),
               IconButton(

@@ -89,7 +89,7 @@ class DashboardMobileView extends ConsumerWidget {
                 const DonutAllocationChart(),
               ],
             ],
-            const SizedBox(height: 80), // Padding for bottom bar & FAB
+            const SizedBox(height: 100), // Padding for bottom bar & FAB
           ],
         ),
       ),
@@ -99,7 +99,7 @@ class DashboardMobileView extends ConsumerWidget {
               backgroundColor: AppColors.crimson,
               icon: const Icon(Icons.add_rounded, color: Colors.white),
               label: Text(
-                'Add Asset',
+                'Add Investment',
                 style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: Colors.white),
               ),
               onPressed: () {

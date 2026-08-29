@@ -33,8 +33,7 @@ class AppHeader extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final showFullNav = constraints.maxWidth >= 920;
-          final showCompactNav = constraints.maxWidth >= 720 && constraints.maxWidth < 920;
+          final showFullNav = constraints.maxWidth >= 1024;
 
           return Row(
             children: [
@@ -109,8 +108,8 @@ class AppHeader extends ConsumerWidget {
                 ],
               ),
 
-              // Desktop Navigation Tabs
-              if (showFullNav || showCompactNav) ...[
+              // Desktop Navigation Tabs (>= 1024px)
+              if (showFullNav) ...[
                 const SizedBox(width: 20),
                 Expanded(
                   child: SingleChildScrollView(
@@ -177,14 +176,14 @@ class AppHeader extends ConsumerWidget {
                 ),
               ),
 
-              // Primary Crimson Red CTA (shown on tablet and desktop)
-              if (constraints.maxWidth >= 600) ...[
-                const SizedBox(width: 8),
+              // Primary Crimson Red CTA (shown exclusively on desktop >= 1024px)
+              if (constraints.maxWidth >= 1024) ...[
+                const SizedBox(width: 10),
                 CrimsonButton(
-                  text: constraints.maxWidth >= 680 ? '+ Add Investment' : '+ Add',
+                  text: '+ Add Investment',
                   icon: Icons.add_rounded,
                   height: 34,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
                   onPressed: () {
                     showDialog(
                       context: context,

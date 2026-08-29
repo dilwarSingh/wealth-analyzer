@@ -72,10 +72,12 @@ class AIQuickInsightsBar extends StatelessWidget {
                 ),
               ),
               if (onOpenCopilot != null) ...[
-                const SizedBox(width: 8),
+                const SizedBox(width: 4),
                 IconButton(
                   icon: Icon(Icons.arrow_forward_ios_rounded, color: theme.secondaryAccentColor, size: 14),
                   tooltip: 'Open AI Copilot',
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
                   onPressed: onOpenCopilot,
                 ),
               ],

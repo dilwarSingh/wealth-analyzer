@@ -35,6 +35,7 @@ class StreamingThinkingParser {
   }) onChunk;
 
   bool _insideThinkTag = false;
+  bool _insideNativeReasoning = false;
   String _tagBuffer = '';
   final StringBuffer _thinkingBuffer = StringBuffer();
   final StringBuffer _textBuffer = StringBuffer();
@@ -45,7 +46,7 @@ class StreamingThinkingParser {
 
   String get accumulatedThinking => _thinkingBuffer.toString();
   String get accumulatedText => _textBuffer.toString();
-  bool get isThinking => _insideThinkTag;
+  bool get isThinking => _insideNativeReasoning || _insideThinkTag;
 
   Duration? get thinkingDuration {
     if (_thinkingStartTime == null) return null;
@@ -56,7 +57,7 @@ class StreamingThinkingParser {
   void feedNativeReasoning(String delta) {
     if (delta.isEmpty) return;
     _thinkingStartTime ??= DateTime.now();
-    _insideThinkTag = true;
+    _insideNativeReasoning = true;
     _thinkingBuffer.write(delta);
     onChunk(
       textDelta: '',
@@ -67,8 +68,8 @@ class StreamingThinkingParser {
   }
 
   void markNativeThinkingComplete() {
-    if (_insideThinkTag) {
-      _insideThinkTag = false;
+    if (_insideNativeReasoning) {
+      _insideNativeReasoning = false;
       _thinkingEndTime = DateTime.now();
       onChunk(
         textDelta: '',
@@ -82,6 +83,11 @@ class StreamingThinkingParser {
   void feedContent(String chunk) {
     if (chunk.isEmpty) return;
 
+    // Transition out of native reasoning if content starts streaming
+    if (_insideNativeReasoning) {
+      markNativeThinkingComplete();
+    }
+
     for (int i = 0; i < chunk.length; i++) {
       final char = chunk[i];
       if (char == '<' || _tagBuffer.isNotEmpty) {
@@ -90,6 +96,7 @@ class StreamingThinkingParser {
         if (lower == '<think>' || lower == '<thought>') {
           _insideThinkTag = true;
           _thinkingStartTime ??= DateTime.now();
+          _thinkingEndTime = null;
           _tagBuffer = '';
           onChunk(
             textDelta: '',
@@ -107,8 +114,8 @@ class StreamingThinkingParser {
             isThinking: false,
             duration: thinkingDuration,
           );
-        } else if (_tagBuffer.length > 10 || (!_tagBuffer.startsWith('<') && !_tagBuffer.startsWith('</'))) {
-          // Normal text false alarm
+        } else if (!_isPotentialTagPrefix(lower)) {
+          // Not a think tag prefix, flush buffered tag characters immediately
           if (_insideThinkTag) {
             _thinkingBuffer.write(_tagBuffer);
             onChunk(
@@ -150,16 +157,53 @@ class StreamingThinkingParser {
     }
   }
 
+  static bool _isPotentialTagPrefix(String lower) {
+    const validPrefixes = [
+      '<',
+      '<t',
+      '<th',
+      '<thi',
+      '<thin',
+      '<think',
+      '<think>',
+      '<tho',
+      '<thou',
+      '<thoug',
+      '<though',
+      '<thought',
+      '<thought>',
+      '</',
+      '</t',
+      '</th',
+      '</thi',
+      '</thin',
+      '</think',
+      '</think>',
+      '</tho',
+      '</thou',
+      '</thoug',
+      '</though',
+      '</thought',
+      '</thought>',
+    ];
+    return validPrefixes.contains(lower);
+  }
+
   void finalize() {
-    if (_insideThinkTag) {
+    if (_insideNativeReasoning || _insideThinkTag) {
+      _insideNativeReasoning = false;
       _insideThinkTag = false;
       _thinkingEndTime = DateTime.now();
     }
     if (_tagBuffer.isNotEmpty) {
-      _textBuffer.write(_tagBuffer);
+      if (_insideThinkTag) {
+        _thinkingBuffer.write(_tagBuffer);
+      } else {
+        _textBuffer.write(_tagBuffer);
+      }
       onChunk(
-        textDelta: _tagBuffer,
-        thinkingDelta: '',
+        textDelta: _insideThinkTag ? '' : _tagBuffer,
+        thinkingDelta: _insideThinkTag ? _tagBuffer : '',
         isThinking: false,
         duration: thinkingDuration,
       );

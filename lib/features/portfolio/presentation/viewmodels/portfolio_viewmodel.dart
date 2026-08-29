@@ -101,8 +101,10 @@ class PortfolioViewModel extends StateNotifier<PortfolioState> {
     try {
       state = state.copyWith(isLoading: true, errorMessage: null);
       final assets = await _manageAssetsUseCase.getAssets();
+      if (!mounted) return;
       _updateStateWithAssets(assets);
     } catch (e) {
+      if (!mounted) return;
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
   }
@@ -177,9 +179,11 @@ class PortfolioViewModel extends StateNotifier<PortfolioState> {
       state = state.copyWith(isLoading: true, errorMessage: null);
       await _manageAssetsUseCase.addOrUpdateAsset(asset);
       final updatedAssets = await _manageAssetsUseCase.getAssets();
+      if (!mounted) return true;
       _updateStateWithAssets(updatedAssets);
       return true;
     } catch (e) {
+      if (!mounted) return false;
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
       return false;
     }
@@ -190,9 +194,11 @@ class PortfolioViewModel extends StateNotifier<PortfolioState> {
       state = state.copyWith(isLoading: true, errorMessage: null);
       await _manageAssetsUseCase.deleteAsset(id);
       final updatedAssets = await _manageAssetsUseCase.getAssets();
+      if (!mounted) return true;
       _updateStateWithAssets(updatedAssets);
       return true;
     } catch (e) {
+      if (!mounted) return false;
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
       return false;
     }
@@ -203,9 +209,11 @@ class PortfolioViewModel extends StateNotifier<PortfolioState> {
       state = state.copyWith(isLoading: true, errorMessage: null);
       await _manageAssetsUseCase.loadSamplePortfolio(presetType);
       final updatedAssets = await _manageAssetsUseCase.getAssets();
+      if (!mounted) return true;
       _updateStateWithAssets(updatedAssets);
       return true;
     } catch (e) {
+      if (!mounted) return false;
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
       return false;
     }
@@ -215,9 +223,11 @@ class PortfolioViewModel extends StateNotifier<PortfolioState> {
     try {
       state = state.copyWith(isLoading: true, errorMessage: null);
       await _manageAssetsUseCase.clearAll();
+      if (!mounted) return true;
       _updateStateWithAssets([]);
       return true;
     } catch (e) {
+      if (!mounted) return false;
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
       return false;
     }
@@ -230,11 +240,13 @@ class PortfolioViewModel extends StateNotifier<PortfolioState> {
         final updatedAsset = state.assets[index].copyWith(isIncluded: isIncluded);
         await _manageAssetsUseCase.addOrUpdateAsset(updatedAsset);
         final updatedAssets = await _manageAssetsUseCase.getAssets();
+        if (!mounted) return true;
         _updateStateWithAssets(updatedAssets);
         return true;
       }
       return false;
     } catch (e) {
+      if (!mounted) return false;
       state = state.copyWith(errorMessage: e.toString());
       return false;
     }
@@ -245,9 +257,11 @@ class PortfolioViewModel extends StateNotifier<PortfolioState> {
       final updatedList = state.assets.map((a) => a.copyWith(isIncluded: isIncluded)).toList();
       await _manageAssetsUseCase.repository.setAssets(updatedList);
       final updatedAssets = await _manageAssetsUseCase.getAssets();
+      if (!mounted) return true;
       _updateStateWithAssets(updatedAssets);
       return true;
     } catch (e) {
+      if (!mounted) return false;
       state = state.copyWith(errorMessage: e.toString());
       return false;
     }
@@ -293,11 +307,13 @@ class PortfolioViewModel extends StateNotifier<PortfolioState> {
           }
         }
         await _manageAssetsUseCase.repository.setAssets(imported);
+        if (!mounted) return true;
         _updateStateWithAssets(imported);
         return true;
       }
       return false;
     } catch (e) {
+      if (!mounted) return false;
       state = state.copyWith(errorMessage: 'Invalid JSON format: $e');
       return false;
     }

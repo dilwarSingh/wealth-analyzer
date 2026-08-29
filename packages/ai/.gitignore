@@ -1,0 +1,13 @@
+# Generated files
+.dart_tool/
+build/
+coverage/
+.flutter-plugins-dependencies
+
+# Editor files
+.idea/
+.vscode/
+.DS_Store
+
+# Logs
+*.log
