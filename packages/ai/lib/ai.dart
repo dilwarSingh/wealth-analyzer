@@ -1,5 +1,5 @@
 /// AI Module Public API Export Barrel
-library ai;
+library;
 
 // Domain Contracts & Enums
 export 'src/domain/contracts/ai_portfolio_contract.dart';

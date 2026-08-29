@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 /// Definitions of tools exposed to LLMs for deterministic calculations, portfolio actions, and Generative UI
 class AIFinancialToolDefinitions {
   static const String toolRunMonteCarlo = 'run_monte_carlo';

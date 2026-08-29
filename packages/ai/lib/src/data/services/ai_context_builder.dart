@@ -1,4 +1,3 @@
-import 'dart:convert';
 import '../../domain/contracts/ai_portfolio_contract.dart';
 import '../../domain/entities/ai_config.dart';
 import '../../domain/entities/ai_persona.dart';
@@ -20,7 +19,6 @@ class AIContextBuilder {
         ? sharingConfig.filterSnapshot(snapshot)
         : snapshot;
 
-    final currencySymbol = effectiveSnapshot.currencySymbol;
     final isINR = effectiveSnapshot.isINR;
 
     final currencyInstruction = isINR

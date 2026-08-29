@@ -1403,7 +1403,7 @@ class _AIDataSharingDialogState extends ConsumerState<AIDataSharingDialog> {
                                   ],
                                 ),
                               );
-                            }).toList(),
+                            }),
                           ],
                         ),
                       );

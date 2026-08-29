@@ -1,4 +1,3 @@
-import 'dart:math';
 import '../../domain/contracts/ai_portfolio_contract.dart';
 import '../../domain/entities/financial_goal.dart';
 import '../../domain/entities/generative_ui_payload.dart';

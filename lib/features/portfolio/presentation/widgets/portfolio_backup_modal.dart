@@ -1,3 +1,4 @@
+import 'package:ai/ai.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -217,6 +218,7 @@ class _PortfolioBackupModalState extends ConsumerState<PortfolioBackupModal> {
                       label: Text('Clear All', style: AppTypography.buttonText.copyWith(color: AppColors.loss)),
                       onPressed: () {
                         ref.read(portfolioProvider.notifier).clearAll();
+                        ref.read(aiSessionProvider.notifier).clearAllSessions();
                         Navigator.of(context).pop();
                       },
                     ),

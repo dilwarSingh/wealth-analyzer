@@ -45,27 +45,18 @@ class _AIScreenState extends ConsumerState<AIScreen> {
   final TextEditingController _textController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  bool _hasPromptedPrivacy = false;
+  String? _lastSessionId;
+  int _lastMessageCount = 0;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkInitialPrivacyPrompt();
+      _scrollToBottom();
       if (widget.initialPrompt != null && widget.initialPrompt!.isNotEmpty) {
         _handleSend(prompt: widget.initialPrompt!);
       }
     });
-  }
-
-  void _checkInitialPrivacyPrompt() {
-    if (_hasPromptedPrivacy) return;
-    final config = ref.read(aiSettingsProvider);
-    final activeSession = ref.read(aiSessionProvider).activeSession;
-    if (activeSession != null && activeSession.messages.isEmpty && config.autoShowPrivacyDialog) {
-      _hasPromptedPrivacy = true;
-      _openDataSharingDialog(activeSession.id);
-    }
   }
 
   void _openDataSharingDialog(String activeSessionId) {
@@ -107,11 +98,7 @@ class _AIScreenState extends ConsumerState<AIScreen> {
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeOut,
-        );
+        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
       }
     });
   }
@@ -155,6 +142,12 @@ class _AIScreenState extends ConsumerState<AIScreen> {
     final persona = ref.watch(aiPersonaProvider);
     final config = ref.watch(aiSettingsProvider);
 
+    if (_lastSessionId != activeSessionId || _lastMessageCount != chatState.messages.length) {
+      _lastSessionId = activeSessionId;
+      _lastMessageCount = chatState.messages.length;
+      _scrollToBottom();
+    }
+
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: Colors.transparent,
@@ -163,6 +156,19 @@ class _AIScreenState extends ConsumerState<AIScreen> {
         onSessionSelected: () {
           if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
             Navigator.of(context).pop();
+          }
+          _scrollToBottom();
+        },
+        onNewSessionCreated: (newSessionId) {
+          if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
+            Navigator.of(context).pop();
+          }
+          _scrollToBottom();
+          final config = ref.read(aiSettingsProvider);
+          if (config.autoShowPrivacyDialog) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _openDataSharingDialog(newSessionId);
+            });
           }
         },
       ),
@@ -488,18 +494,25 @@ class _AIScreenState extends ConsumerState<AIScreen> {
   Widget _buildMessageList(AIChatState chatState, AIThemeData theme) {
     final messages = chatState.messages;
 
-    return ListView.builder(
+    return Scrollbar(
       controller: _scrollController,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      itemCount: messages.length + (chatState.isStreaming ? 1 : 0),
-      itemBuilder: (ctx, i) {
-        if (i < messages.length) {
-          final msg = messages[i];
-          return _buildMessageBubble(msg, theme);
-        } else {
-          return _buildStreamingBubble(chatState, theme);
-        }
-      },
+      radius: const Radius.circular(8),
+      thickness: 6,
+      interactive: true,
+      child: ListView.builder(
+        controller: _scrollController,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        cacheExtent: 10000,
+        itemCount: messages.length + (chatState.isStreaming ? 1 : 0),
+        itemBuilder: (ctx, i) {
+          if (i < messages.length) {
+            final msg = messages[i];
+            return _buildMessageBubble(msg, theme);
+          } else {
+            return _buildStreamingBubble(chatState, theme);
+          }
+        },
+      ),
     );
   }
 

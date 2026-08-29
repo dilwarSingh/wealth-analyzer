@@ -28,6 +28,7 @@ void main() {
       expect(textChunks.join(''), 'Based on your current portfolio, you have 70% in equities.');
       expect(thinkingChunks.join(''), 'Analyzing asset allocation drift...');
       expect(parser.thinkingDuration != null, true);
+      expect(isThinkingState, false);
     });
 
     test('Correctly handles native reasoning content deltas with manual completion', () {

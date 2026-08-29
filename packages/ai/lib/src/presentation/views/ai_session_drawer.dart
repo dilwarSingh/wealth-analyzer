@@ -3,13 +3,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../domain/contracts/ai_portfolio_contract.dart';
 import '../viewmodels/ai_session_viewmodel.dart';
-import '../widgets/ai_glass_card.dart';
 
 class AISessionDrawer extends ConsumerWidget {
   final AIThemeData theme;
   final VoidCallback? onSessionSelected;
+  final ValueChanged<String>? onNewSessionCreated;
 
-  const AISessionDrawer({super.key, required this.theme, this.onSessionSelected});
+  const AISessionDrawer({
+    super.key,
+    required this.theme,
+    this.onSessionSelected,
+    this.onNewSessionCreated,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -44,8 +49,9 @@ class AISessionDrawer extends ConsumerWidget {
                     icon: Icon(Icons.add_rounded, color: theme.secondaryAccentColor, size: 22),
                     tooltip: 'New Chat Thread',
                     onPressed: () async {
-                      await ref.read(aiSessionProvider.notifier).createNewSession();
+                      final newSession = await ref.read(aiSessionProvider.notifier).createNewSession();
                       if (onSessionSelected != null) onSessionSelected!();
+                      if (onNewSessionCreated != null) onNewSessionCreated!(newSession.id);
                     },
                   ),
                 ],

@@ -1,5 +1,4 @@
 import 'package:ai/ai.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/utils/currency_formatter.dart';
@@ -7,7 +6,6 @@ import '../../../../core/utils/financial_calculator.dart';
 import '../../domain/entities/asset_category.dart';
 import '../../domain/entities/investment_asset.dart';
 import '../../domain/entities/fire_models.dart';
-import '../../domain/usecases/calculate_fire_projection.dart';
 import '../viewmodels/currency_viewmodel.dart';
 import '../viewmodels/fire_viewmodel.dart';
 import '../viewmodels/portfolio_viewmodel.dart';

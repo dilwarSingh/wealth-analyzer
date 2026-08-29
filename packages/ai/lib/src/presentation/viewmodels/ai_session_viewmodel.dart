@@ -122,4 +122,16 @@ class AISessionViewModel extends StateNotifier<AISessionState> {
       state = state.copyWith(sessions: remaining, activeSessionId: nextActive);
     }
   }
+
+  Future<void> clearAllSessions() async {
+    await _repo.clearAllSessions();
+    final fresh = ChatSession(
+      id: _uuid.v4(),
+      title: 'Initial Wealth Audit',
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+    await _repo.saveSession(fresh);
+    state = state.copyWith(sessions: [fresh], activeSessionId: fresh.id);
+  }
 }
