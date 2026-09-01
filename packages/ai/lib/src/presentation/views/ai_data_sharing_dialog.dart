@@ -325,89 +325,101 @@ class _AIDataSharingDialogState extends ConsumerState<AIDataSharingDialog> {
   Widget _buildTopPrivacyControls(AIThemeData theme) {
     final isPromptOnly = _privacyMode == ContextPrivacyMode.promptOnly;
 
-    return Row(
-      children: [
-        // Privacy Mode Dropdown
-        Expanded(
-          flex: 3,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Financial Data Privacy Mode:',
-                style: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w600, color: theme.textSecondaryColor),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isNarrow = constraints.maxWidth < 460;
+
+        final dropdownWidget = Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Financial Data Privacy Mode:',
+              style: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w600, color: theme.textSecondaryColor),
+            ),
+            const SizedBox(height: 5),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              height: 38,
+              decoration: BoxDecoration(
+                color: theme.surfaceLightColor.withOpacity(0.4),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: theme.borderColor.withOpacity(0.3)),
               ),
-              const SizedBox(height: 5),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                height: 38,
-                decoration: BoxDecoration(
-                  color: theme.surfaceLightColor.withOpacity(0.4),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: theme.borderColor.withOpacity(0.3)),
+              child: DropdownButton<ContextPrivacyMode>(
+                value: _privacyMode,
+                isExpanded: true,
+                underline: const SizedBox(),
+                dropdownColor: theme.surfaceLightColor,
+                items: ContextPrivacyMode.values.map((mode) {
+                  return DropdownMenuItem(
+                    value: mode,
+                    child: Text(
+                      mode.displayName,
+                      style: GoogleFonts.inter(fontSize: 12, color: theme.textPrimaryColor),
+                    ),
+                  );
+                }).toList(),
+                onChanged: (mode) {
+                  if (mode != null) setState(() => _privacyMode = mode);
+                },
+              ),
+            ),
+          ],
+        );
+
+        final anonymizeWidget = Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: theme.surfaceLightColor.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: theme.borderColor.withOpacity(0.2)),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Anonymize Values',
+                      style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: theme.textPrimaryColor),
+                    ),
+                    Text(
+                      _anonymizeValues ? 'Percentages Mode' : 'Exact Currency Mode',
+                      style: GoogleFonts.inter(fontSize: 10, color: theme.textMutedColor),
+                    ),
+                  ],
                 ),
-                child: DropdownButton<ContextPrivacyMode>(
-                  value: _privacyMode,
-                  isExpanded: true,
-                  underline: const SizedBox(),
-                  dropdownColor: theme.surfaceLightColor,
-                  items: ContextPrivacyMode.values.map((mode) {
-                    return DropdownMenuItem(
-                      value: mode,
-                      child: Text(
-                        mode.displayName,
-                        style: GoogleFonts.inter(fontSize: 12, color: theme.textPrimaryColor),
-                      ),
-                    );
-                  }).toList(),
-                  onChanged: (mode) {
-                    if (mode != null) setState(() => _privacyMode = mode);
-                  },
-                ),
+              ),
+              Switch(
+                activeColor: theme.secondaryAccentColor,
+                value: _anonymizeValues,
+                onChanged: isPromptOnly ? null : (val) => setState(() => _anonymizeValues = val),
               ),
             ],
           ),
-        ),
-        const SizedBox(width: 14),
+        );
 
-        // Anonymize Switch
-        Expanded(
-          flex: 3,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: theme.surfaceLightColor.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: theme.borderColor.withOpacity(0.2)),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Anonymize Values',
-                        style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: theme.textPrimaryColor),
-                      ),
-                      Text(
-                        _anonymizeValues ? 'Percentages Mode' : 'Exact Currency Mode',
-                        style: GoogleFonts.inter(fontSize: 10, color: theme.textMutedColor),
-                      ),
-                    ],
-                  ),
-                ),
-                Switch(
-                  activeColor: theme.secondaryAccentColor,
-                  value: _anonymizeValues,
-                  onChanged: isPromptOnly ? null : (val) => setState(() => _anonymizeValues = val),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
+        if (isNarrow) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              dropdownWidget,
+              const SizedBox(height: 10),
+              anonymizeWidget,
+            ],
+          );
+        }
+
+        return Row(
+          children: [
+            Expanded(flex: 3, child: dropdownWidget),
+            const SizedBox(width: 14),
+            Expanded(flex: 3, child: anonymizeWidget),
+          ],
+        );
+      },
     );
   }
 

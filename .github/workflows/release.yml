@@ -1,9 +1,10 @@
-name: Release Build Matrix (Desktop & Web)
+name: Release Build Matrix (Desktop, Web & Android)
 
 on:
   push:
     tags:
       - 'v*'
+      - '[0-9]+.*'
   workflow_dispatch:
     inputs:
       tag_name:
@@ -290,9 +291,67 @@ jobs:
           path: dist/wealth-analyzer-web.zip
           if-no-files-found: error
 
+  build-android:
+    name: Build Android (Release APK)
+    needs: lint-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Configure Keystore (Optional Secrets)
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "Configuring release signing from GitHub Secrets..."
+            echo "$KEYSTORE_BASE64" | base64 -d > android/upload-keystore.jks
+            cat << EOF > android/key.properties
+storePassword=${STORE_PASSWORD}
+keyPassword=${KEY_PASSWORD}
+keyAlias=${KEY_ALIAS}
+storeFile=upload-keystore.jks
+EOF
+          else
+            echo "No ANDROID_KEYSTORE_BASE64 secret provided; falling back to debug signing."
+          fi
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Build Android Release APK
+        run: flutter build apk --release
+
+      - name: Package Android Artifact
+        run: |
+          mkdir -p dist
+          cp build/app/outputs/flutter-apk/app-release.apk dist/wealth-analyzer-android-release.apk
+
+      - name: Upload Android Release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: wealth-analyzer-android-release-apk
+          path: dist/wealth-analyzer-android-release.apk
+          if-no-files-found: error
+
   publish-release:
     name: Publish GitHub Release
-    needs: [build-windows, build-linux, build-macos, build-web]
+    needs: [build-windows, build-linux, build-macos, build-web, build-android]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -338,3 +397,5 @@ jobs:
             release-artifacts/wealth-analyzer-ubuntu-24.04-amd64.deb
             release-artifacts/wealth-analyzer-macos.dmg
             release-artifacts/wealth-analyzer-web.zip
+            release-artifacts/wealth-analyzer-android-release.apk
+
