@@ -75,16 +75,16 @@ class _AIScreenState extends ConsumerState<AIScreen> {
     );
   }
 
-  String _getPrivacyPillLabel(AIDataSharingConfig config) {
+  String _getPrivacyPillLabel(AIDataSharingConfig config, {bool compact = false}) {
     if (config.privacyMode == ContextPrivacyMode.promptOnly) {
-      return '🛡️ Prompt Only';
+      return compact ? 'Prompt Only' : '🛡️ Prompt Only';
     } else if (config.anonymizeValues) {
-      return '🛡️ Masked (100k)';
+      return compact ? 'Masked' : '🛡️ Masked (100k)';
     } else if (config.privacyMode == ContextPrivacyMode.summaryOnly) {
-      return '🛡️ Summary Only';
+      return compact ? 'Summary' : '🛡️ Summary Only';
     } else {
       final count = config.includedCategories.length;
-      return '🛡️ $count Categories';
+      return compact ? '$count Cats' : '🛡️ $count Categories';
     }
   }
 
@@ -200,102 +200,122 @@ class _AIScreenState extends ConsumerState<AIScreen> {
     AIThemeData theme,
   ) {
     final sharingConfig = chatState.sharingConfig ?? const AIDataSharingConfig();
-    final privacyLabel = _getPrivacyPillLabel(sharingConfig);
 
-    return AIGlassCard(
-      theme: theme,
-      borderRadius: 0,
-      borderWidth: 0,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final isCompact = constraints.maxWidth < 600;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isCompact = constraints.maxWidth < 600;
+        final isVeryNarrow = constraints.maxWidth < 390;
+        final privacyLabel = _getPrivacyPillLabel(sharingConfig, compact: isCompact);
 
-          return Row(
+        return AIGlassCard(
+          theme: theme,
+          borderRadius: 0,
+          borderWidth: 0,
+          padding: EdgeInsets.symmetric(
+            horizontal: isVeryNarrow ? 6 : (isCompact ? 8 : 12),
+            vertical: isCompact ? 6 : 8,
+          ),
+          child: Row(
             children: [
               // Drawer Trigger
               IconButton(
-                icon: Icon(Icons.menu_rounded, color: theme.secondaryAccentColor, size: 20),
+                icon: Icon(Icons.menu_rounded, color: theme.secondaryAccentColor, size: 19),
                 tooltip: 'Chat Threads',
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
                 onPressed: () => _scaffoldKey.currentState?.openDrawer(),
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: 3),
 
-              // Persona Selector
-              PopupMenuButton<AIPersona>(
-                color: theme.surfaceLightColor,
-                tooltip: 'Switch Advisor Persona',
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                constraints: const BoxConstraints(minWidth: 280, maxWidth: 360),
-                onSelected: (p) => ref.read(aiPersonaProvider.notifier).selectPersona(p),
-                itemBuilder: (ctx) => AIPersona.presets.map((p) {
-                  return PopupMenuItem(
-                    value: p,
+              // Persona Selector (Wrapped in Flexible so it never overflows)
+              Flexible(
+                child: PopupMenuButton<AIPersona>(
+                  color: theme.surfaceLightColor,
+                  tooltip: 'Switch Advisor Persona',
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  constraints: const BoxConstraints(minWidth: 280, maxWidth: 360),
+                  onSelected: (p) => ref.read(aiPersonaProvider.notifier).selectPersona(p),
+                  itemBuilder: (ctx) => AIPersona.presets.map((p) {
+                    return PopupMenuItem(
+                      value: p,
+                      child: Row(
+                        children: [
+                          Text(p.icon, style: const TextStyle(fontSize: 16)),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  p.name,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: theme.textPrimaryColor,
+                                  ),
+                                ),
+                                Text(
+                                  p.tagline,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 10,
+                                    color: theme.textMutedColor,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isVeryNarrow ? 5 : 7,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: theme.surfaceLightColor.withOpacity(0.6),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: theme.borderColor.withOpacity(0.4)),
+                    ),
                     child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(p.icon, style: const TextStyle(fontSize: 16)),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                p.name,
-                                style: GoogleFonts.inter(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                  color: theme.textPrimaryColor,
-                                ),
-                              ),
-                              Text(
-                                p.tagline,
-                                style: GoogleFonts.inter(
-                                  fontSize: 10,
-                                  color: theme.textMutedColor,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
+                        Text(persona.icon, style: const TextStyle(fontSize: 12)),
+                        const SizedBox(width: 3),
+                        Flexible(
+                          child: Text(
+                            persona.name,
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: theme.textPrimaryColor,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
+                        const SizedBox(width: 2),
+                        Icon(Icons.arrow_drop_down_rounded, color: theme.secondaryAccentColor, size: 16),
                       ],
                     ),
-                  );
-                }).toList(),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: theme.surfaceLightColor.withOpacity(0.6),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: theme.borderColor.withOpacity(0.4)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(persona.icon, style: const TextStyle(fontSize: 13)),
-                      const SizedBox(width: 4),
-                      Text(
-                        persona.name,
-                        style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: theme.textPrimaryColor),
-                      ),
-                      const SizedBox(width: 2),
-                      Icon(Icons.arrow_drop_down_rounded, color: theme.secondaryAccentColor, size: 16),
-                    ],
                   ),
                 ),
               ),
-              const Spacer(),
+              const SizedBox(width: 4),
 
               // Privacy Shield Pill
               InkWell(
                 onTap: () => _openDataSharingDialog(activeSessionId),
                 borderRadius: BorderRadius.circular(16),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isVeryNarrow ? 5 : 7,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: theme.secondaryAccentColor.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(16),
@@ -304,8 +324,8 @@ class _AIScreenState extends ConsumerState<AIScreen> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.shield_outlined, size: 13, color: theme.secondaryAccentColor),
-                      const SizedBox(width: 4),
+                      Icon(Icons.shield_outlined, size: 12, color: theme.secondaryAccentColor),
+                      const SizedBox(width: 3),
                       Text(
                         privacyLabel,
                         style: GoogleFonts.inter(
@@ -318,7 +338,7 @@ class _AIScreenState extends ConsumerState<AIScreen> {
                   ),
                 ),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 3),
 
               // Provider Badge (Hidden on compact mobile, visible on desktop)
               if (!isCompact) ...[
@@ -360,7 +380,7 @@ class _AIScreenState extends ConsumerState<AIScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: 4),
               ],
 
               // 1-Click Instant Audit CTA
@@ -368,7 +388,7 @@ class _AIScreenState extends ConsumerState<AIScreen> {
                 icon: Icon(Icons.bolt_rounded, color: theme.secondaryAccentColor, size: 18),
                 tooltip: 'Instant Wealth Audit',
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
+                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
                 onPressed: () {
                   ref.read(aiChatProvider(activeSessionId).notifier).runInstantAudit(
                     snapshot: widget.snapshot,
@@ -377,14 +397,14 @@ class _AIScreenState extends ConsumerState<AIScreen> {
                   _scrollToBottom();
                 },
               ),
-              const SizedBox(width: 2),
+              const SizedBox(width: 1),
 
               // Settings Button
               IconButton(
                 icon: Icon(Icons.settings_outlined, color: theme.textSecondaryColor, size: 17),
                 tooltip: 'AI Settings',
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
+                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
                 onPressed: () {
                   showDialog(
                     context: context,
@@ -393,9 +413,9 @@ class _AIScreenState extends ConsumerState<AIScreen> {
                 },
               ),
             ],
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -757,9 +777,13 @@ class _AIScreenState extends ConsumerState<AIScreen> {
                 children: [
                   Icon(Icons.lock_outline_rounded, size: 11, color: theme.textMutedColor),
                   const SizedBox(width: 4),
-                  Text(
-                    'Data Sharing: $privacyLabel (Tap to customize)',
-                    style: GoogleFonts.inter(fontSize: 10, color: theme.textMutedColor),
+                  Flexible(
+                    child: Text(
+                      'Data Sharing: $privacyLabel (Tap to customize)',
+                      style: GoogleFonts.inter(fontSize: 10, color: theme.textMutedColor),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ],
               ),

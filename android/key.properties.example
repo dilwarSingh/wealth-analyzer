@@ -1,0 +1,5 @@
+# Example Android Release Key Properties
+storePassword=yourStorePassword
+keyPassword=yourKeyPassword
+keyAlias=upload
+storeFile=upload-keystore.jks
