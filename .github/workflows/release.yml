@@ -321,12 +321,10 @@ jobs:
           if [ -n "$KEYSTORE_BASE64" ]; then
             echo "Configuring release signing from GitHub Secrets..."
             echo "$KEYSTORE_BASE64" | base64 -d > android/upload-keystore.jks
-            cat << EOF > android/key.properties
-storePassword=${STORE_PASSWORD}
-keyPassword=${KEY_PASSWORD}
-keyAlias=${KEY_ALIAS}
-storeFile=upload-keystore.jks
-EOF
+            echo "storePassword=${STORE_PASSWORD}" > android/key.properties
+            echo "keyPassword=${KEY_PASSWORD}" >> android/key.properties
+            echo "keyAlias=${KEY_ALIAS}" >> android/key.properties
+            echo "storeFile=upload-keystore.jks" >> android/key.properties
           else
             echo "No ANDROID_KEYSTORE_BASE64 secret provided; falling back to debug signing."
           fi
