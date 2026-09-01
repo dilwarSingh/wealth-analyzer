@@ -326,7 +326,20 @@ jobs:
             echo "keyAlias=${KEY_ALIAS}" >> android/key.properties
             echo "storeFile=upload-keystore.jks" >> android/key.properties
           else
-            echo "No ANDROID_KEYSTORE_BASE64 secret provided; falling back to debug signing."
+            echo "No ANDROID_KEYSTORE_BASE64 secret provided; generating CI build keystore..."
+            keytool -genkeypair -v \
+              -keystore android/upload-keystore.jks \
+              -alias upload \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -storepass android \
+              -keypass android \
+              -dname "CN=Wealth Analyzer CI, OU=CI, O=Wealth Analyzer, L=San Francisco, ST=CA, C=US"
+            echo "storePassword=android" > android/key.properties
+            echo "keyPassword=android" >> android/key.properties
+            echo "keyAlias=upload" >> android/key.properties
+            echo "storeFile=upload-keystore.jks" >> android/key.properties
           fi
 
       - name: Install Dependencies
